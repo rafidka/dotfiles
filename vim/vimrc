@@ -1,0 +1,192 @@
+" vim/vimrc - Main Vim configuration
+" Requires vim-plug: https://github.com/junegunn/vim-plug
+
+" --- Auto-install vim-plug if not present ---
+let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
+if empty(glob(data_dir . '/autoload/plug.vim'))
+  silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+" --- Plugins ---
+call plug#begin('~/.vim/plugged')
+
+" Color scheme
+Plug 'tomasiser/vim-code-dark'
+
+" File explorer
+Plug 'preservim/nerdtree'
+Plug 'Xuyuanp/nerdtree-git-plugin'
+Plug 'ryanoasis/vim-devicons'
+
+" Status line
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+
+" Fuzzy finder
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+
+" Completion engine
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+" Language support
+Plug 'vim-python/python-syntax'
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+
+" Utilities
+Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-fugitive'
+Plug 'editorconfig/editorconfig-vim'
+Plug 'tell-k/vim-autopep8'
+
+call plug#end()
+
+" --- General Settings ---
+syntax enable
+filetype plugin indent on
+set encoding=utf-8
+set fileencoding=utf-8
+set number
+set relativenumber
+set cursorline
+set showmatch
+set wildmenu
+set wildmode=longest:full,full
+set mouse=a
+set ttymouse=sgr
+set clipboard=unnamedplus
+set hidden
+set updatetime=300
+set signcolumn=yes
+set shortmess+=c
+set scrolloff=5
+
+" Indentation
+set autoindent
+set smartindent
+set expandtab
+set tabstop=4
+set shiftwidth=4
+set softtabstop=4
+
+" Search
+set incsearch
+set hlsearch
+set ignorecase
+set smartcase
+
+" Line wrapping
+set wrap
+set linebreak
+set textwidth=80
+
+" Backups (disable - use git instead)
+set nobackup
+set nowritebackup
+set noswapfile
+
+" Persistent undo
+set undofile
+set undodir=~/.vim/undodir
+if !isdirectory(&undodir)
+    call mkdir(&undodir, 'p')
+endif
+
+" --- Color Scheme ---
+if has('termguicolors')
+    set termguicolors
+endif
+set background=dark
+colorscheme codedark
+let g:airline_theme = 'codedark'
+
+" --- Leader Key ---
+let mapleader = " "
+
+" --- Key Mappings ---
+
+" File navigation (fzf)
+nnoremap <Leader>ff :Files<CR>
+nnoremap <Leader>fg :GFiles<CR>
+nnoremap <Leader>fb :Buffers<CR>
+nnoremap <Leader>fc :Rg<CR>
+nnoremap <Leader>fh :History<CR>
+
+" NERDTree
+nnoremap <Leader>nt :NERDTreeToggle<CR>
+nnoremap <Leader>nf :NERDTreeFind<CR>
+
+" Buffer navigation
+nnoremap [b :bprevious<CR>
+nnoremap ]b :bnext<CR>
+nnoremap <Leader>bd :bdelete<CR>
+
+" Clear search highlight
+nnoremap <Leader><space> :nohlsearch<CR>
+
+" Quick save and quit
+nnoremap <Leader>w :w<CR>
+nnoremap <Leader>q :q<CR>
+nnoremap <Leader>x :x<CR>
+
+" Window navigation
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+" Move lines up/down in visual mode
+vnoremap J :m '>+1<CR>gv=gv
+vnoremap K :m '<-2<CR>gv=gv
+
+" Keep cursor centered when scrolling
+nnoremap <C-d> <C-d>zz
+nnoremap <C-u> <C-u>zz
+nnoremap n nzzzv
+nnoremap N Nzzzv
+
+" Visual selection search
+vnoremap // y/\V<C-R>=escape(@",'/\')<CR><CR>
+
+" --- Plugin Configurations ---
+
+" NERDTree
+let NERDTreeShowHidden = 1
+let NERDTreeIgnore = ['\.pyc$', '__pycache__', '\.git$', 'node_modules', '\.venv']
+let NERDTreeMinimalUI = 1
+
+" Open NERDTree when opening a directory
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | endif
+
+" Close vim if NERDTree is the only window left
+autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
+
+" Airline
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#formatter = 'unique_tail'
+let g:airline_powerline_fonts = 1
+
+" Python syntax
+let g:python_highlight_all = 1
+
+" Autopep8
+let g:autopep8_max_line_length = 88
+let g:autopep8_disable_show_diff = 1
+nnoremap <Leader>ap :Autopep8<CR>
+
+" vim-go
+let g:go_fmt_autosave = 1
+let g:go_fmt_command = "goimports"
+
+" --- Cursor Shape ---
+let &t_SI = "\e[6 q"  " Insert mode: bar
+let &t_EI = "\e[2 q"  " Normal mode: block
+let &t_SR = "\e[4 q"  " Replace mode: underline
+
+" --- Source CoC configuration ---
+if filereadable(expand("~/.vim/coc.vim"))
+    source ~/.vim/coc.vim
+endif

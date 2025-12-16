@@ -1,0 +1,18 @@
+# Machine-specific local configuration
+zsh/local.zsh
+
+# Vim plugin files (managed by vim-plug)
+vim/plugged/
+vim/autoload/
+
+# Vim undo history
+vim/undodir/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
