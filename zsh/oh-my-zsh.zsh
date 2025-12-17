@@ -34,9 +34,9 @@ fi
 # Context segment: show user@host only when relevant
 prompt_context() {
     if [[ -n "$HOMEDIR_PROMPT_LABEL" ]]; then
-        prompt_segment black default "$HOMEDIR_PROMPT_LABEL"
+        prompt_segment red default "$HOMEDIR_PROMPT_LABEL"
     elif [[ "$USER" != "$DEFAULT_USER" || -n "$SSH_CLIENT" ]]; then
-        prompt_segment black default "%(!.%{%F{yellow}%}.)$USER@%m"
+        prompt_segment red default "%(!.%{%F{yellow}%}.)$USER@%m"
     fi
 }
 
