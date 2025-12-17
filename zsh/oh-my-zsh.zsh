@@ -37,7 +37,7 @@ fi
 prompt_context() {
     if [[ -n "$DOTFILES_PROMPT_LABEL" ]]; then
         prompt_segment red default "$DOTFILES_PROMPT_LABEL"
-    elif [[ "$USER" != "$DEFAULT_USER" || -n "$SSH_CLIENT" ]]; then
+    elif [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" || -n "$SSH_CONNECTION" ]]; then
         prompt_segment red default "%(!.%{%F{yellow}%}.)$USER@%m"
     fi
 }
