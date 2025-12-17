@@ -49,6 +49,9 @@ Plug 'tpope/vim-fugitive'
 Plug 'editorconfig/editorconfig-vim'
 Plug 'tell-k/vim-autopep8'
 
+" Git integration
+Plug 'airblade/vim-gitgutter'
+
 call plug#end()
 
 " --- General Settings ---

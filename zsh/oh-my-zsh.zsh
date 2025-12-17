@@ -10,9 +10,11 @@ ZSH_THEME="agnoster"
 plugins=(
     git
     colored-man-pages
+    zoxide
+    fzf-tab
     zsh-autosuggestions
-    zsh-syntax-highlighting
     zsh-completions
+    zsh-syntax-highlighting
 )
 
 # Oh-my-zsh settings

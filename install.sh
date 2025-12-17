@@ -50,6 +50,14 @@ else
     echo "  - zsh-completions already installed"
 fi
 
+# fzf-tab
+if [[ ! -d "$ZSH_CUSTOM/plugins/fzf-tab" ]]; then
+    echo "  - Installing fzf-tab..."
+    git clone --depth=1 https://github.com/Aloxaf/fzf-tab.git "$ZSH_CUSTOM/plugins/fzf-tab"
+else
+    echo "  - fzf-tab already installed"
+fi
+
 # --- FZF Installation ---
 echo "[3/4] Installing FZF..."
 if [[ ! -d "$HOME/.fzf" ]]; then
