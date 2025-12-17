@@ -57,18 +57,18 @@ fzf_search_content() {
     fi
 }
 
-# Fuzzy checkout git branch
-gco() {
-    if ! command -v fzf &> /dev/null; then
-        echo "fzf is not installed" >&2
-        return 1
-    fi
-
-    local branches branch
-    branches=$(git branch -a --color=always | grep -v HEAD) || return
-    branch=$(echo "$branches" | fzf --ansi --preview 'git log --oneline --graph --color=always $(echo {} | sed "s/.* //" | sed "s#remotes/[^/]*/##")' | sed "s/.* //" | sed "s#remotes/[^/]*/##")
-
-    if [[ -n "$branch" ]]; then
-        git checkout "$branch"
-    fi
-}
+# # Fuzzy checkout git branch
+# gco() {
+#     if ! command -v fzf &> /dev/null; then
+#         echo "fzf is not installed" >&2
+#         return 1
+#     fi
+# 
+#     local branches branch
+#     branches=$(git branch -a --color=always | grep -v HEAD) || return
+#     branch=$(echo "$branches" | fzf --ansi --preview 'git log --oneline --graph --color=always $(echo {} | sed "s/.* //" | sed "s#remotes/[^/]*/##")' | sed "s/.* //" | sed "s#remotes/[^/]*/##")
+# 
+#     if [[ -n "$branch" ]]; then
+#         git checkout "$branch"
+#     fi
+# }

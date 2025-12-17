@@ -22,4 +22,4 @@ source "${HOMEDIR_ROOT}/zsh/functions.zsh"
 source "${HOMEDIR_ROOT}/zsh/aliases.zsh"
 
 # 7. Local overrides (machine-specific, gitignored)
-[[ -f "${HOMEDIR_ROOT}/zsh/local.zsh" ]] && source "${HOMEDIR_ROOT}/zsh/local.zsh"
+[[ -f "${HOMEDIR_ROOT}/zsh/local.zsh" ]] && source "${HOMEDIR_ROOT}/zsh/local.zsh" || true

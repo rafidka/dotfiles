@@ -1,15 +1,23 @@
 " vim/vimrc - Main Vim configuration
 " Requires vim-plug: https://github.com/junegunn/vim-plug
 
+" --- Determine script directory (works even when sourced via VIMINIT) ---
+let s:vimdir = expand('<sfile>:p:h')
+
+" --- Set up runtimepath to use our vim directory ---
+" Prepend our vim dir and append our after dir for ftplugin
+execute 'set runtimepath^=' . s:vimdir
+execute 'set runtimepath+=' . s:vimdir . '/after'
+
 " --- Auto-install vim-plug if not present ---
-let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
-if empty(glob(data_dir . '/autoload/plug.vim'))
-  silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+let s:plug_path = s:vimdir . '/autoload/plug.vim'
+if empty(glob(s:plug_path))
+  silent execute '!curl -fLo ' . s:plug_path . ' --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
   autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
 " --- Plugins ---
-call plug#begin('~/.vim/plugged')
+call plug#begin(s:vimdir . '/plugged')
 
 " Color scheme
 Plug 'tomasiser/vim-code-dark'
@@ -89,7 +97,7 @@ set noswapfile
 
 " Persistent undo
 set undofile
-set undodir=~/.vim/undodir
+let &undodir = s:vimdir . '/undodir'
 if !isdirectory(&undodir)
     call mkdir(&undodir, 'p')
 endif
@@ -187,6 +195,7 @@ let &t_EI = "\e[2 q"  " Normal mode: block
 let &t_SR = "\e[4 q"  " Replace mode: underline
 
 " --- Source CoC configuration ---
-if filereadable(expand("~/.vim/coc.vim"))
-    source ~/.vim/coc.vim
+let s:coc_config = s:vimdir . '/coc.vim'
+if filereadable(s:coc_config)
+    execute 'source ' . s:coc_config
 endif

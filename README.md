@@ -8,6 +8,7 @@ Personal home directory configuration for Zsh and Vim.
 - **Vim configuration** with CoC completion, NERDTree, fzf integration, and more
 - **Modular design** - easy to customize and extend
 - **Single entry point** - just add one line to your `.zshrc`
+- **Self-contained** - no symlinks needed, everything stays in `~/homedir`
 
 ## Installation
 
@@ -22,7 +23,7 @@ cd ~/homedir
 # Restart your shell
 source ~/.zshrc
 
-# Install Vim plugins
+# Install Vim plugins (auto-runs on first vim launch, or manually)
 vim +PlugInstall +qall
 ```
 
@@ -39,15 +40,20 @@ vim +PlugInstall +qall
 │   ├── aliases.zsh       # Shell aliases
 │   ├── functions.zsh     # Custom functions
 │   ├── history.zsh       # History settings
-│   ├── path.zsh          # PATH configuration
+│   ├── path.zsh          # PATH configuration, VIMINIT
 │   ├── fzf.zsh           # FZF integration
 │   └── local.zsh         # Machine-specific (gitignored)
 │
 └── vim/                  # Vim configuration
     ├── vimrc             # Main config with vim-plug
     ├── coc.vim           # CoC completion config
-    └── ftplugin/         # Filetype-specific settings
+    └── after/ftplugin/   # Filetype-specific settings
 ```
+
+## How It Works
+
+- **Zsh**: Sourcing `activate.sh` sets `HOMEDIR_ROOT` and loads all zsh modules
+- **Vim**: The `VIMINIT` environment variable points vim to our vimrc, which sets up `runtimepath` to use our vim directory - no symlinks needed!
 
 ## Usage
 

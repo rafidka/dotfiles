@@ -10,7 +10,8 @@ This is a personal dotfiles repository for Zsh and Vim configuration. It is desi
 - **Zsh-only**: No bash support. If sourced in a non-zsh shell, it prints an error and returns (not exits, since it's sourced)
 - **Single entry point**: User adds `source ~/homedir/activate.sh` to their `.zshrc`
 - **Modular zsh config**: Each concern (path, history, aliases, etc.) is in its own file
-- **Vim symlinks**: Vim configs are symlinked to `~/.vim/` because Vim's plugin system requires files in specific locations
+- **No symlinks**: Vim uses `VIMINIT` environment variable to source vimrc, and vimrc sets up `runtimepath` - no symlinks needed
+- **Self-contained**: Everything lives in `~/homedir`, plugins install into `~/homedir/vim/`
 - **Machine-specific overrides**: `zsh/local.zsh` is gitignored for per-machine settings
 
 ## Directory Structure
@@ -18,10 +19,10 @@ This is a personal dotfiles repository for Zsh and Vim configuration. It is desi
 ```
 ~/homedir/
 ├── activate.sh           # Entry point - checks for zsh, sets HOMEDIR_ROOT, sources init.zsh
-├── install.sh            # First-time setup (oh-my-zsh, plugins, fzf, vim symlinks)
+├── install.sh            # First-time setup (oh-my-zsh, plugins, fzf)
 ├── zsh/
 │   ├── init.zsh          # Orchestrator - sources all modules in correct order
-│   ├── path.zsh          # PATH modifications, EDITOR variable
+│   ├── path.zsh          # PATH modifications, EDITOR, VIMINIT
 │   ├── oh-my-zsh.zsh     # Oh-my-zsh config (agnoster theme, plugins)
 │   ├── history.zsh       # Zsh history settings (1M entries, shared history)
 │   ├── fzf.zsh           # FZF configuration and keybindings
@@ -29,9 +30,12 @@ This is a personal dotfiles repository for Zsh and Vim configuration. It is desi
 │   ├── aliases.zsh       # Aliases (git, navigation, utilities)
 │   └── local.zsh         # Machine-specific overrides (gitignored, optional)
 └── vim/
-    ├── vimrc             # Main vim config with vim-plug plugins
+    ├── vimrc             # Main vim config - sets runtimepath, loads plugins
     ├── coc.vim           # CoC (completion) configuration
-    └── ftplugin/         # Filetype-specific settings (symlinked to ~/.vim/after/ftplugin)
+    ├── autoload/         # vim-plug installed here (gitignored)
+    ├── plugged/          # Plugins installed here (gitignored)
+    ├── undodir/          # Persistent undo files (gitignored)
+    └── after/ftplugin/   # Filetype-specific settings
         ├── python.vim    # 88-col, 4-space indent
         ├── go.vim        # 120-col, tabs
         ├── typescript.vim # 100-col, 2-space indent
@@ -48,7 +52,7 @@ This is a personal dotfiles repository for Zsh and Vim configuration. It is desi
         ├─> Check $ZSH_VERSION (error + return 1 if not zsh)
         ├─> Set HOMEDIR_ROOT="${0:A:h}"
         └─> source zsh/init.zsh
-              ├─> path.zsh      (PATH, EDITOR)
+              ├─> path.zsh      (PATH, EDITOR, VIMINIT)
               ├─> oh-my-zsh.zsh (framework, theme, plugins)
               ├─> history.zsh   (history settings)
               ├─> fzf.zsh       (fuzzy finder)
@@ -57,20 +61,31 @@ This is a personal dotfiles repository for Zsh and Vim configuration. It is desi
               └─> local.zsh     (if exists)
 ```
 
+## How Vim Configuration Works (No Symlinks)
+
+Instead of symlinks, we use environment variables:
+
+1. **`zsh/path.zsh`** sets `VIMINIT="source ${HOMEDIR_ROOT}/vim/vimrc"`
+2. When vim starts, it reads `VIMINIT` and sources our vimrc
+3. **`vim/vimrc`** uses `expand('<sfile>:p:h')` to determine its directory
+4. It then sets `runtimepath` to include our vim directory
+5. This allows ftplugin, autoload, and plugins to work without symlinks
+
+```vim
+" In vim/vimrc:
+let s:vimdir = expand('<sfile>:p:h')
+execute 'set runtimepath^=' . s:vimdir
+execute 'set runtimepath+=' . s:vimdir . '/after'
+```
+
+**Note**: This means vim only uses our config when `VIMINIT` is set (i.e., when the shell sources activate.sh). Running vim from a different shell without activate.sh sourced will use default vim settings.
+
 ## Key Environment Variables
 
 - `HOMEDIR_ROOT` - Absolute path to the homedir directory (set by activate.sh)
+- `VIMINIT` - Tells vim to source our vimrc (set by path.zsh)
 - `ZSH` - Path to oh-my-zsh installation (`~/.oh-my-zsh`)
 - `EDITOR` / `VISUAL` - Default editor (vim)
-
-## Vim Symlinks (created by install.sh)
-
-| Symlink | Target |
-|---------|--------|
-| `~/.vim/vimrc` | `~/homedir/vim/vimrc` |
-| `~/.vim/coc.vim` | `~/homedir/vim/coc.vim` |
-| `~/.vim/after/ftplugin` | `~/homedir/vim/ftplugin` |
-| `~/.vimrc` | Contains `source ~/.vim/vimrc` |
 
 ## Vim Plugins (via vim-plug)
 
@@ -128,7 +143,7 @@ Create `zsh/local.zsh` (this file is gitignored)
 Add `Plug 'author/plugin'` to `vim/vimrc` in the plug#begin/end block, then run `:PlugInstall`
 
 ### Adding a new filetype configuration
-Create `vim/ftplugin/<filetype>.vim`
+Create `vim/after/ftplugin/<filetype>.vim`
 
 ### Installing CoC language servers
 Run in vim: `:CocInstall coc-pyright coc-tsserver coc-json coc-go`
@@ -140,6 +155,7 @@ Run in vim: `:CocInstall coc-pyright coc-tsserver coc-json coc-go`
 - Use `command -v` instead of `which` for checking command existence
 - Use `return` (not `exit`) in sourced scripts
 - Zsh-specific features (like `${0:A:h}`) are only used in .zsh files
+- Vim uses `s:` prefix for script-local variables
 
 ## Testing Changes
 
@@ -147,4 +163,4 @@ After making changes:
 1. Open a new terminal, or
 2. Run `source ~/homedir/activate.sh` to reload
 
-For vim changes, restart vim or run `:source ~/.vim/vimrc`
+For vim changes, restart vim or run `:source ~/homedir/vim/vimrc`
