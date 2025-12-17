@@ -31,7 +31,6 @@ This is a personal dotfiles repository for Zsh and Vim configuration. It is desi
 │   └── local.zsh         # Machine-specific overrides (gitignored, optional)
 └── vim/
     ├── vimrc             # Main vim config - sets runtimepath, loads plugins
-    ├── coc.vim           # CoC (completion) configuration
     ├── autoload/         # vim-plug installed here (gitignored)
     ├── plugged/          # Plugins installed here (gitignored)
     ├── undodir/          # Persistent undo files (gitignored)
@@ -90,13 +89,12 @@ execute 'set runtimepath+=' . s:vimdir . '/after'
 ## Vim Plugins (via vim-plug)
 
 - **vim-code-dark** - VSCode-like colorscheme
-- **NERDTree** - File explorer with git integration and devicons
 - **vim-airline** - Status line
 - **fzf.vim** - Fuzzy finder integration
-- **coc.nvim** - LSP-based completion engine
-- **python-syntax**, **vim-go** - Language support
+- **python-syntax** - Enhanced Python syntax highlighting
 - **vim-commentary**, **vim-surround**, **vim-fugitive** - Utilities
-- **editorconfig-vim**, **vim-autopep8** - Formatting
+- **vim-autopep8** - Python formatting
+- **vim-gitgutter** - Git diff indicators in gutter
 
 ## Vim Key Mappings (Space = Leader)
 
@@ -105,13 +103,10 @@ execute 'set runtimepath+=' . s:vimdir . '/after'
 | `<Space>ff` | Find files |
 | `<Space>fc` | Find in files (ripgrep) |
 | `<Space>fb` | List buffers |
-| `<Space>nt` | Toggle NERDTree |
-| `<Space>nf` | Find file in NERDTree |
-| `gd` | Go to definition |
-| `gr` | Find references |
-| `K` | Show documentation |
-| `<Space>rn` | Rename symbol |
-| `[g` / `]g` | Previous/next diagnostic |
+| `<Space>fg` | Find git files |
+| `<Space>fh` | File history |
+| `<Space>ap` | Run autopep8 on current file |
+| `[b` / `]b` | Previous/next buffer |
 
 ## Oh-My-Zsh Configuration
 
@@ -144,9 +139,6 @@ Add `Plug 'author/plugin'` to `vim/vimrc` in the plug#begin/end block, then run 
 
 ### Adding a new filetype configuration
 Create `vim/after/ftplugin/<filetype>.vim`
-
-### Installing CoC language servers
-Run in vim: `:CocInstall coc-pyright coc-tsserver coc-json coc-go`
 
 ## Code Style
 

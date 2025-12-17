@@ -22,11 +22,6 @@ call plug#begin(s:vimdir . '/plugged')
 " Color scheme
 Plug 'tomasiser/vim-code-dark'
 
-" File explorer
-Plug 'preservim/nerdtree'
-Plug 'Xuyuanp/nerdtree-git-plugin'
-Plug 'ryanoasis/vim-devicons'
-
 " Status line
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
@@ -35,18 +30,13 @@ Plug 'vim-airline/vim-airline-themes'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 
-" Completion engine
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
-
 " Language support
 Plug 'vim-python/python-syntax'
-Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
 
 " Utilities
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-fugitive'
-Plug 'editorconfig/editorconfig-vim'
 Plug 'tell-k/vim-autopep8'
 
 " Git integration
@@ -125,10 +115,6 @@ nnoremap <Leader>fb :Buffers<CR>
 nnoremap <Leader>fc :Rg<CR>
 nnoremap <Leader>fh :History<CR>
 
-" NERDTree
-nnoremap <Leader>nt :NERDTreeToggle<CR>
-nnoremap <Leader>nf :NERDTreeFind<CR>
-
 " Buffer navigation
 nnoremap [b :bprevious<CR>
 nnoremap ]b :bnext<CR>
@@ -163,18 +149,6 @@ vnoremap // y/\V<C-R>=escape(@",'/\')<CR><CR>
 
 " --- Plugin Configurations ---
 
-" NERDTree
-let NERDTreeShowHidden = 1
-let NERDTreeIgnore = ['\.pyc$', '__pycache__', '\.git$', 'node_modules', '\.venv']
-let NERDTreeMinimalUI = 1
-
-" Open NERDTree when opening a directory
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | endif
-
-" Close vim if NERDTree is the only window left
-autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
-
 " Airline
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#formatter = 'unique_tail'
@@ -188,17 +162,7 @@ let g:autopep8_max_line_length = 88
 let g:autopep8_disable_show_diff = 1
 nnoremap <Leader>ap :Autopep8<CR>
 
-" vim-go
-let g:go_fmt_autosave = 1
-let g:go_fmt_command = "goimports"
-
 " --- Cursor Shape ---
 let &t_SI = "\e[6 q"  " Insert mode: bar
 let &t_EI = "\e[2 q"  " Normal mode: block
 let &t_SR = "\e[4 q"  " Replace mode: underline
-
-" --- Source CoC configuration ---
-let s:coc_config = s:vimdir . '/coc.vim'
-if filereadable(s:coc_config)
-    execute 'source ' . s:coc_config
-endif
