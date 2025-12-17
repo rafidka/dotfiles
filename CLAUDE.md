@@ -4,21 +4,21 @@ This file provides context for Claude (AI assistant) when working with this repo
 
 ## Project Overview
 
-This is a personal dotfiles repository for Zsh and Vim configuration. It is designed to be cloned to `~/homedir` and activated with a single line in `.zshrc`.
+This is a personal dotfiles repository for Zsh and Vim configuration. It is designed to be cloned to `~/dotfiles` and activated with a single line in `.zshrc`.
 
 **Key Design Decisions:**
 - **Zsh-only**: No bash support. If sourced in a non-zsh shell, it prints an error and returns (not exits, since it's sourced)
-- **Single entry point**: User adds `source ~/homedir/activate.sh` to their `.zshrc`
+- **Single entry point**: User adds `source ~/dotfiles/activate.sh` to their `.zshrc`
 - **Modular zsh config**: Each concern (path, history, aliases, etc.) is in its own file
 - **No symlinks**: Vim uses `VIMINIT` environment variable to source vimrc, and vimrc sets up `runtimepath` - no symlinks needed
-- **Self-contained**: Everything lives in `~/homedir`, plugins install into `~/homedir/vim/`
+- **Self-contained**: Everything lives in `~/dotfiles`, plugins install into `~/dotfiles/vim/`
 - **Machine-specific overrides**: `zsh/local.zsh` is gitignored for per-machine settings
 
 ## Directory Structure
 
 ```
-~/homedir/
-├── activate.sh           # Entry point - checks for zsh, sets HOMEDIR_ROOT, sources init.zsh
+~/dotfiles/
+├── activate.sh           # Entry point - checks for zsh, sets DOTFILES, sources init.zsh
 ├── install.sh            # First-time setup (oh-my-zsh, plugins, fzf)
 ├── zsh/
 │   ├── init.zsh          # Orchestrator - sources all modules in correct order
@@ -48,9 +48,9 @@ This is a personal dotfiles repository for Zsh and Vim configuration. It is desi
 
 ```
 ~/.zshrc
-  └─> source ~/homedir/activate.sh
+  └─> source ~/dotfiles/activate.sh
         ├─> Check $ZSH_VERSION (error + return 1 if not zsh)
-        ├─> Set HOMEDIR_ROOT="${0:A:h}"
+        ├─> Set DOTFILES="${0:A:h}"
         └─> source zsh/init.zsh
               ├─> path.zsh      (PATH, EDITOR, VIMINIT)
               ├─> oh-my-zsh.zsh (framework, theme, plugins)
@@ -65,7 +65,7 @@ This is a personal dotfiles repository for Zsh and Vim configuration. It is desi
 
 Instead of symlinks, we use environment variables:
 
-1. **`zsh/path.zsh`** sets `VIMINIT="source ${HOMEDIR_ROOT}/vim/vimrc"`
+1. **`zsh/path.zsh`** sets `VIMINIT="source ${DOTFILES}/vim/vimrc"`
 2. When vim starts, it reads `VIMINIT` and sources our vimrc
 3. **`vim/vimrc`** uses `expand('<sfile>:p:h')` to determine its directory
 4. It then sets `runtimepath` to include our vim directory
@@ -82,7 +82,7 @@ execute 'set runtimepath+=' . s:vimdir . '/after'
 
 ## Key Environment Variables
 
-- `HOMEDIR_ROOT` - Absolute path to the homedir directory (set by activate.sh)
+- `DOTFILES` - Absolute path to the dotfiles directory (set by activate.sh)
 - `VIMINIT` - Tells vim to source our vimrc (set by path.zsh)
 - `ZSH` - Path to oh-my-zsh installation (`~/.oh-my-zsh`)
 - `EDITOR` / `VISUAL` - Default editor (vim)
@@ -161,6 +161,6 @@ Run in vim: `:CocInstall coc-pyright coc-tsserver coc-json coc-go`
 
 After making changes:
 1. Open a new terminal, or
-2. Run `source ~/homedir/activate.sh` to reload
+2. Run `source ~/dotfiles/activate.sh` to reload (or just `reload` alias)
 
-For vim changes, restart vim or run `:source ~/homedir/vim/vimrc`
+For vim changes, restart vim or run `:source ~/dotfiles/vim/vimrc`

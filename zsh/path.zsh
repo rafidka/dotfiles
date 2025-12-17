@@ -30,4 +30,4 @@ export EDITOR="${EDITOR:-vim}"
 export VISUAL="${VISUAL:-vim}"
 
 # Vim configuration - use VIMINIT to source our vimrc without symlinks
-export VIMINIT="source ${HOMEDIR_ROOT}/vim/vimrc"
+export VIMINIT="source ${DOTFILES}/vim/vimrc"

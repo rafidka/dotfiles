@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# install.sh - First-time setup for homedir
+# install.sh - First-time setup for dotfiles
 # Usage: ./install.sh
 
 set -e
 
-HOMEDIR_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "========================================"
-echo "  Homedir Installation"
+echo "  Dotfiles Installation"
 echo "========================================"
 echo ""
-echo "Installing from: $HOMEDIR_ROOT"
+echo "Installing from: $DOTFILES"
 echo ""
 
 # --- Oh-My-Zsh Installation ---
@@ -70,16 +70,16 @@ fi
 # --- Add activation to .zshrc ---
 echo "[4/4] Configuring .zshrc..."
 ZSHRC="$HOME/.zshrc"
-ACTIVATION_LINE="source ~/homedir/activate.sh"
+ACTIVATION_LINE="source ~/dotfiles/activate.sh"
 
 # Create .zshrc if it doesn't exist
 if [[ ! -f "$ZSHRC" ]]; then
     touch "$ZSHRC"
 fi
 
-if ! grep -q "homedir/activate.sh" "$ZSHRC" 2>/dev/null; then
+if ! grep -q "dotfiles/activate.sh" "$ZSHRC" 2>/dev/null; then
     echo "" >> "$ZSHRC"
-    echo "# Homedir configuration" >> "$ZSHRC"
+    echo "# Dotfiles configuration" >> "$ZSHRC"
     echo "$ACTIVATION_LINE" >> "$ZSHRC"
     echo "  - Added activation to .zshrc"
 else
@@ -98,8 +98,8 @@ echo "     (vim-plug will be auto-installed on first vim launch)"
 echo "  3. For CoC language servers, run commands like:"
 echo "     :CocInstall coc-pyright coc-tsserver coc-json coc-go"
 echo ""
-echo "Optional: Create ~/homedir/zsh/local.zsh for machine-specific settings"
+echo "Optional: Create ~/dotfiles/zsh/local.zsh for machine-specific settings"
 echo ""
 echo "Note: Vim configuration uses VIMINIT environment variable."
-echo "      No symlinks are needed - everything is self-contained in ~/homedir."
+echo "      No symlinks are needed - everything is self-contained in ~/dotfiles."
 echo ""

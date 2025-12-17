@@ -1,6 +1,6 @@
-# Homedir
+# Dotfiles
 
-Personal home directory configuration for Zsh and Vim.
+Personal dotfiles for Zsh and Vim.
 
 ## Features
 
@@ -8,16 +8,16 @@ Personal home directory configuration for Zsh and Vim.
 - **Vim configuration** with CoC completion, NERDTree, fzf integration, and more
 - **Modular design** - easy to customize and extend
 - **Single entry point** - just add one line to your `.zshrc`
-- **Self-contained** - no symlinks needed, everything stays in `~/homedir`
+- **Self-contained** - no symlinks needed, everything stays in `~/dotfiles`
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/rafidka/homedir.git ~/homedir
+git clone https://github.com/rafidka/dotfiles.git ~/dotfiles
 
 # Run the install script
-cd ~/homedir
+cd ~/dotfiles
 ./install.sh
 
 # Restart your shell
@@ -30,7 +30,7 @@ vim +PlugInstall +qall
 ## Structure
 
 ```
-~/homedir/
+~/dotfiles/
 ├── activate.sh           # Entry point (source this from .zshrc)
 ├── install.sh            # First-time setup script
 │
@@ -52,7 +52,7 @@ vim +PlugInstall +qall
 
 ## How It Works
 
-- **Zsh**: Sourcing `activate.sh` sets `HOMEDIR_ROOT` and loads all zsh modules
+- **Zsh**: Sourcing `activate.sh` sets `DOTFILES` and loads all zsh modules
 - **Vim**: The `VIMINIT` environment variable points vim to our vimrc, which sets up `runtimepath` to use our vim directory - no symlinks needed!
 
 ## Usage
@@ -106,7 +106,7 @@ Key mappings (Space is the leader key):
 
 ### Machine-specific settings
 
-Create `~/homedir/zsh/local.zsh` for settings specific to your machine:
+Create `~/dotfiles/zsh/local.zsh` for settings specific to your machine:
 
 ```zsh
 # Example local.zsh

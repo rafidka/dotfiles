@@ -54,11 +54,11 @@ fi
 
 # --- Quick edit ---
 alias zshrc='${EDITOR:-vim} ~/.zshrc'
-alias vimrc='${EDITOR:-vim} ${HOMEDIR_ROOT}/vim/vimrc'
-alias homedirrc='${EDITOR:-vim} ${HOMEDIR_ROOT}/zsh/local.zsh'
+alias vimrc='${EDITOR:-vim} ${DOTFILES}/vim/vimrc'
+alias localrc='${EDITOR:-vim} ${DOTFILES}/zsh/local.zsh'
 
 # --- Reload shell config ---
-alias reload='source ~/homedir/activate.sh'
+alias reload='source ~/dotfiles/activate.sh'
 
 # --- Grep with color ---
 alias grep='grep --color=auto'
