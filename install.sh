@@ -95,10 +95,29 @@ echo "Next steps:"
 echo "  1. Restart your shell or run: source ~/.zshrc"
 echo "  2. Open vim and run :PlugInstall to install vim plugins"
 echo "     (vim-plug will be auto-installed on first vim launch)"
-echo "  3. For CoC language servers, run commands like:"
-echo "     :CocInstall coc-pyright coc-tsserver coc-json coc-go"
 echo ""
 echo "Optional: Create ~/dotfiles/zsh/local.zsh for machine-specific settings"
+
+# --- Check for optional tools ---
+MISSING_TOOLS=""
+
+if ! command -v bat &>/dev/null && ! command -v batcat &>/dev/null; then
+    MISSING_TOOLS="$MISSING_TOOLS bat"
+fi
+
+if ! command -v timg &>/dev/null; then
+    MISSING_TOOLS="$MISSING_TOOLS timg"
+fi
+
+if ! command -v lazygit &>/dev/null; then
+    MISSING_TOOLS="$MISSING_TOOLS lazygit"
+fi
+
+if [[ -n "$MISSING_TOOLS" ]]; then
+    echo ""
+    echo "Recommended tools not found:$MISSING_TOOLS"
+    echo "Some aliases depend on these tools. Install them for full functionality."
+fi
 echo ""
 echo "Note: Vim configuration uses VIMINIT environment variable."
 echo "      No symlinks are needed - everything is self-contained in ~/dotfiles."

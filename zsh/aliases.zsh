@@ -41,10 +41,21 @@ else
 fi
 
 # --- Utilities ---
+alias cls='clear'
+alias d='docker'
+alias icat='timg'
+alias ipy='ipython'
+alias lgit='lazygit'
 alias newpass='openssl rand -base64 32'
 alias py='python3'
-alias ipy='ipython'
-alias cls='clear'
+
+# --- bat (batcat on Debian/Ubuntu, bat elsewhere) ---
+if command -v batcat &>/dev/null; then
+    alias bat='batcat'
+    alias cat='batcat -pp'
+elif command -v bat &>/dev/null; then
+    alias cat='bat -pp'
+fi
 
 # --- Clipboard (Linux) ---
 if [[ "$(uname)" == "Linux" ]] && command -v xclip &> /dev/null; then
