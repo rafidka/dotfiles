@@ -4,7 +4,8 @@
       "Bash(gh repo view:*)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:gist.github.com)"
     ]
   }
 }

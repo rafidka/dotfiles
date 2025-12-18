@@ -1,0 +1,107 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Help function
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Stop and remove ALL Docker resources: containers, images, volumes, and networks.
+
+OPTIONS:
+    -h, --help      Show this help message and exit
+    -f, --force     Skip confirmation prompt
+
+WARNING: This is an EXTREMELY destructive operation that cannot be undone!
+         ALL Docker resources will be permanently removed, including:
+         - All containers (running and stopped)
+         - All images
+         - All volumes (including named volumes with data!)
+         - All custom networks
+
+Example:
+    $(basename "$0")        # Will prompt for confirmation
+    $(basename "$0") -f     # Skip confirmation (use with extreme caution!)
+
+EOF
+    exit 0
+}
+
+# Check for help flag
+if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+    show_help
+fi
+
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "Error: Docker is not installed or not in PATH" >&2
+    exit 1
+fi
+
+# Confirmation prompt unless forced
+if [[ "${1:-}" != "-f" ]] && [[ "${1:-}" != "--force" ]]; then
+    echo "EXTREME WARNING: This will remove ALL Docker resources!"
+    echo "This includes ALL volumes with data that cannot be recovered!"
+    read -p "Are you ABSOLUTELY sure you want to continue? Type 'yes' to confirm: " -r
+    if [[ "$REPLY" != "yes" ]]; then
+        echo "Operation cancelled."
+        exit 0
+    fi
+fi
+
+echo "Starting complete Docker cleanup..."
+
+# Stop all running containers
+echo "Stopping all running containers..."
+RUNNING_CONTAINERS=$(docker ps -q)
+if [[ -n "$RUNNING_CONTAINERS" ]]; then
+    docker stop $RUNNING_CONTAINERS
+else
+    echo "No running containers to stop."
+fi
+
+# Remove all containers
+echo "Removing all containers..."
+ALL_CONTAINERS=$(docker ps -a -q)
+if [[ -n "$ALL_CONTAINERS" ]]; then
+    docker rm $ALL_CONTAINERS
+else
+    echo "No containers to remove."
+fi
+
+# Remove all images
+echo "Removing all images..."
+ALL_IMAGES=$(docker images -q)
+if [[ -n "$ALL_IMAGES" ]]; then
+    docker rmi -f $ALL_IMAGES
+else
+    echo "No images to remove."
+fi
+
+# Remove all volumes
+echo "Removing all volumes..."
+ALL_VOLUMES=$(docker volume ls -q)
+if [[ -n "$ALL_VOLUMES" ]]; then
+    docker volume rm $ALL_VOLUMES
+else
+    echo "No volumes to remove."
+fi
+
+# Remove all custom networks (keep default ones)
+echo "Removing all custom networks..."
+# Get all networks except the default ones (bridge, host, none)
+CUSTOM_NETWORKS=$(docker network ls --format '{{.Name}}' | grep -v -E '^(bridge|host|none)$')
+if [[ -n "$CUSTOM_NETWORKS" ]]; then
+    echo "$CUSTOM_NETWORKS" | xargs -r docker network rm 2>/dev/null || true
+    echo "Custom networks removed."
+else
+    echo "No custom networks to remove."
+fi
+
+# Docker system prune for any remaining cleanup
+echo "Running final system prune..."
+docker system prune -af --volumes 2>/dev/null || true
+
+echo "Complete Docker cleanup finished."
+echo "  All containers, images, volumes, and custom networks have been removed."

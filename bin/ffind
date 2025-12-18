@@ -1,0 +1,171 @@
+#!/bin/bash
+
+set -euo pipefail
+
+show_help() {
+    cat << EOF
+Usage: ffind [OPTIONS] PATTERN
+
+Fuzzy find files and directories in the current directory tree.
+Searches for names matching PATTERN using case-insensitive fuzzy matching.
+
+OPTIONS:
+    -t TYPE    Filter by type: f (files only), d (directories only)
+    -e         Exact substring match instead of fuzzy
+    -c         Case-sensitive search
+    -l LIMIT   Limit results (default: unlimited)
+    -p PATH    Search in specific path (default: current directory)
+    -x EXCLUDE Exclude paths matching pattern (can be used multiple times)
+    -h         Show this help message
+
+EXAMPLES:
+    ffind config           # Find all items with 'config' in the name
+    ffind -t f .py         # Find only files containing '.py'
+    ffind -t d src         # Find only directories containing 'src'
+    ffind -e README        # Find items with exact substring 'README'
+    ffind -c Config        # Case-sensitive search for 'Config'
+    ffind -l 10 test       # Show max 10 results containing 'test'
+    ffind -p ~/Documents log  # Search in ~/Documents for 'log'
+    ffind -x node_modules -x .git package  # Search excluding node_modules and .git
+
+The fuzzy matching allows characters to appear in order but not necessarily
+consecutively. For example, 'cfg' matches 'config', 'conf.cfg', etc.
+EOF
+}
+
+# Default values
+SEARCH_TYPE=""
+FUZZY=true
+CASE_INSENSITIVE=true
+LIMIT=""
+SEARCH_PATH="."
+declare -a EXCLUDES=()
+PATTERN=""
+
+# Parse options
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -t)
+            SEARCH_TYPE="$2"
+            if [[ ! "$SEARCH_TYPE" =~ ^[fd]$ ]]; then
+                echo "Error: -t must be 'f' (files) or 'd' (directories)" >&2
+                exit 1
+            fi
+            shift 2
+            ;;
+        -e)
+            FUZZY=false
+            shift
+            ;;
+        -c)
+            CASE_INSENSITIVE=false
+            shift
+            ;;
+        -l)
+            if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                echo "Error: -l must be a positive integer" >&2
+                exit 1
+            fi
+            LIMIT="$2"
+            shift 2
+            ;;
+        -p)
+            SEARCH_PATH="$2"
+            if [[ ! -d "$SEARCH_PATH" ]]; then
+                echo "Error: Path '$SEARCH_PATH' does not exist or is not a directory" >&2
+                exit 1
+            fi
+            shift 2
+            ;;
+        -x)
+            EXCLUDES+=("$2")
+            shift 2
+            ;;
+        -*)
+            echo "Error: Unknown option: $1" >&2
+            show_help
+            exit 1
+            ;;
+        *)
+            if [[ -n "$PATTERN" ]]; then
+                echo "Error: Multiple patterns specified. Use quotes for patterns with spaces." >&2
+                exit 1
+            fi
+            PATTERN="$1"
+            shift
+            ;;
+    esac
+done
+
+# Check if pattern is provided
+if [[ -z "$PATTERN" ]]; then
+    echo "Error: No search pattern provided" >&2
+    show_help
+    exit 1
+fi
+
+# Build find command as an array
+find_args=("$SEARCH_PATH")
+
+# Add type filter
+case "$SEARCH_TYPE" in
+    f) find_args+=(-type f) ;;
+    d) find_args+=(-type d) ;;
+esac
+
+# Add excludes
+for exclude in "${EXCLUDES[@]}"; do
+    find_args+=(-not -path "*$exclude*")
+done
+
+# Function to create fuzzy regex from pattern
+fuzzy_to_regex() {
+    local pattern="$1"
+    local regex=""
+    for (( i=0; i<${#pattern}; i++ )); do
+        char="${pattern:$i:1}"
+        # Escape special regex characters
+        if [[ "$char" =~ [\.\*\+\?\[\]\(\)\{\}\|\^\\$] ]]; then
+            char="\\$char"
+        fi
+        regex="${regex}.*${char}"
+    done
+    regex="${regex}.*"
+    echo "$regex"
+}
+
+# Build the search pattern
+if $FUZZY; then
+    search_regex=$(fuzzy_to_regex "$PATTERN")
+else
+    # For exact substring, escape special regex characters
+    search_regex=$(printf '%s' "$PATTERN" | sed 's/[][\.|$(){}?+*^]/\\&/g')
+fi
+
+# Apply case sensitivity
+if $CASE_INSENSITIVE; then
+    grep_flags="-i"
+else
+    grep_flags=""
+fi
+
+# Execute find and filter results
+filter_and_output() {
+    while IFS= read -r path; do
+        basename_path=$(basename "$path")
+        if echo "$basename_path" | grep -q $grep_flags "$search_regex"; then
+            echo "$path"
+        fi
+    done
+}
+
+# Run find with array expansion and pipe through filter
+if [[ -n "$LIMIT" ]]; then
+    find "${find_args[@]}" 2>/dev/null | filter_and_output | head -n "$LIMIT"
+else
+    find "${find_args[@]}" 2>/dev/null | filter_and_output
+fi

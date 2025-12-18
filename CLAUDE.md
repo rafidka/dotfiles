@@ -20,6 +20,7 @@ This is a personal dotfiles repository for Zsh and Vim configuration. It is desi
 ~/dotfiles/
 ├── activate.sh           # Entry point - checks for zsh, sets DOTFILES, sources init.zsh
 ├── install.sh            # First-time setup (oh-my-zsh, plugins, fzf)
+├── bin/                  # Utility scripts (added to PATH)
 ├── zsh/
 │   ├── init.zsh          # Orchestrator - sources all modules in correct order
 │   ├── path.zsh          # PATH modifications, EDITOR, VIMINIT
@@ -123,6 +124,57 @@ execute 'set runtimepath+=' . s:vimdir . '/after'
 | `gco` | Fuzzy git branch checkout |
 | `fzf_search_content` | Search file contents, open in vim |
 
+## Bin Scripts
+
+Utility scripts in `bin/` are added to PATH automatically.
+
+### Help
+| Command | Description |
+|---------|-------------|
+| `help` | Show all aliases, functions, and scripts |
+| `help <category>` | Filter by category (git, docker, nav, bin, aliases, functions) |
+
+### Docker
+| Command | Description |
+|---------|-------------|
+| `docker-shell <name>` | Shell into container with partial name matching |
+| `docker-clean` | Remove all containers and images |
+| `docker-purge` | Remove ALL Docker resources (containers, images, volumes, networks) |
+
+### File Finding
+| Command | Description |
+|---------|-------------|
+| `ffind <pattern>` | Fuzzy find files/directories |
+| `ffind-fzf [query]` | Interactive file finder with fzf |
+
+### Process Tools
+| Command | Description |
+|---------|-------------|
+| `mem_usage <process>` | Memory usage by process name |
+| `proctree [user]` | Show process tree for user |
+
+### Python
+| Command | Description |
+|---------|-------------|
+| `pyclean [dir]` | Remove .venv, __pycache__, .pyc, etc. |
+
+### Data Utilities
+| Command | Description |
+|---------|-------------|
+| `pq [file]` | Convert Python literals to JSON |
+| `sumcol [col]` | Sum numeric column from stdin |
+| `dotenv-export [file]` | Export .env as shell commands |
+
+### Disk
+| Command | Description |
+|---------|-------------|
+| `topspace [N] [path]` | List N largest files/dirs |
+
+### Cloud
+| Command | Description |
+|---------|-------------|
+| `gsget <gs://path>` | Download from Google Cloud Storage |
+
 ## Common Tasks
 
 ### Adding a new alias
@@ -139,6 +191,9 @@ Add `Plug 'author/plugin'` to `vim/vimrc` in the plug#begin/end block, then run 
 
 ### Adding a new filetype configuration
 Create `vim/after/ftplugin/<filetype>.vim`
+
+### Adding a new bin script
+Add executable script to `bin/` - it will be in PATH automatically
 
 ## Code Style
 

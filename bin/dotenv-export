@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""
+Export environment variables from a .env file to shell export commands.
+
+Usage:
+    export_env [file]
+    export_env -h|--help
+
+Arguments:
+    file    Path to environment file (default: .env)
+
+Example:
+    eval $(export_env .env)
+"""
+
+import os
+import sys
+
+def print_help():
+    print(__doc__)
+    sys.exit(0)
+
+def read_env_file(file_path):
+    if not os.path.exists(file_path):
+        print(f"Error: File '{file_path}' not found", file=sys.stderr)
+        sys.exit(1)
+    
+    try:
+        with open(file_path, 'r') as file:
+            for line_num, line in enumerate(file, 1):
+                # Ignore comments and empty lines
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                
+                # Handle malformed lines
+                if '=' not in line:
+                    print(f"Warning: Skipping malformed line {line_num}: {line}", file=sys.stderr)
+                    continue
+                
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+                
+                # Remove quotes if present
+                if (value.startswith('"') and value.endswith('"')) or \
+                   (value.startswith("'") and value.endswith("'")):
+                    value = value[1:-1]
+                
+                # Escape special characters for shell
+                value = value.replace('"', '\\"').replace('$', '\\$').replace('`', '\\`')
+                
+                # Print export command
+                print(f'export {key}="{value}"')
+                
+    except IOError as e:
+        print(f"Error reading file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help'):
+        print_help()
+    
+    file_path = sys.argv[1] if len(sys.argv) > 1 else '.env'
+    read_env_file(file_path)
+

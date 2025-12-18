@@ -1,0 +1,108 @@
+#!/bin/bash
+
+set -euo pipefail
+
+show_help() {
+    cat << EOF
+Usage: ffind-fzf [OPTIONS] [INITIAL_QUERY]
+
+Interactive fuzzy file finder using fzf.
+Searches the current directory tree including hidden files.
+
+OPTIONS:
+    -t TYPE    Filter by type: f (files only), d (directories only)
+    -p PATH    Search in specific path (default: current directory)
+    -x EXCLUDE Exclude paths matching pattern (can be used multiple times)
+    -h         Show this help message
+
+EXAMPLES:
+    ffind-fzf              # Interactive search all files
+    ffind-fzf config       # Start with 'config' as initial query
+    ffind-fzf -t f .py     # Search only files, start with '.py'
+    ffind-fzf -t d         # Search only directories
+    ffind-fzf -p ~/Documents  # Search in ~/Documents
+
+Requires fzf to be installed: https://github.com/junegunn/fzf
+EOF
+}
+
+# Check if fzf is installed
+if ! command -v fzf &> /dev/null; then
+    echo "Error: fzf is not installed" >&2
+    echo "Install it with:" >&2
+    echo "  - macOS: brew install fzf" >&2
+    echo "  - Ubuntu/Debian: apt install fzf" >&2
+    echo "  - Fedora: dnf install fzf" >&2
+    echo "  - Or see: https://github.com/junegunn/fzf#installation" >&2
+    exit 1
+fi
+
+# Default values
+SEARCH_TYPE=""
+SEARCH_PATH="."
+declare -a EXCLUDES=()
+INITIAL_QUERY=""
+
+# Parse options
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -t)
+            SEARCH_TYPE="$2"
+            if [[ ! "$SEARCH_TYPE" =~ ^[fd]$ ]]; then
+                echo "Error: -t must be 'f' (files) or 'd' (directories)" >&2
+                exit 1
+            fi
+            shift 2
+            ;;
+        -p)
+            SEARCH_PATH="$2"
+            if [[ ! -d "$SEARCH_PATH" ]]; then
+                echo "Error: Path '$SEARCH_PATH' does not exist or is not a directory" >&2
+                exit 1
+            fi
+            shift 2
+            ;;
+        -x)
+            EXCLUDES+=("$2")
+            shift 2
+            ;;
+        -*)
+            echo "Error: Unknown option: $1" >&2
+            show_help
+            exit 1
+            ;;
+        *)
+            INITIAL_QUERY="$1"
+            shift
+            ;;
+    esac
+done
+
+# Build find command as an array
+find_args=("$SEARCH_PATH")
+
+# Add type filter
+case "$SEARCH_TYPE" in
+    f) find_args+=(-type f) ;;
+    d) find_args+=(-type d) ;;
+esac
+
+# Add excludes
+for exclude in "${EXCLUDES[@]}"; do
+    find_args+=(-not -path "*$exclude*")
+done
+
+# Run find and pipe to fzf
+find "${find_args[@]}" 2>/dev/null | fzf --query="$INITIAL_QUERY" --preview='
+    if [ -d {} ]; then
+        ls -la {}
+    elif file {} | grep -q text; then
+        head -50 {}
+    else
+        file {}
+    fi
+' --preview-window=right:50%:wrap

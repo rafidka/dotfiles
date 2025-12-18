@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+"""
+Memory usage monitor for processes.
+
+Usage:
+    mem_usage <process_path>
+    mem_usage -h|--help
+
+Arguments:
+    process_path    Full or partial path to the process executable
+
+Examples:
+    mem_usage /usr/bin/python3
+    mem_usage python
+    mem_usage chrome
+
+Description:
+    Reports the total memory usage (RSS) in MB for all processes matching
+    the given executable path. Works on both Linux and macOS.
+"""
+
+import subprocess
+import sys
+import platform
+from typing import List
+
+
+def print_help():
+    """Print help message and exit."""
+    print(__doc__)
+    sys.exit(0)
+
+
+def get_pids_linux(process_path: str) -> List[int]:
+    """Get list of PIDs matching the given process path on Linux."""
+    try:
+        # Use pgrep with -f flag for full command line matching
+        result = subprocess.run(
+            ["pgrep", "-f", process_path],
+            capture_output=True,
+            text=True,
+            check=False  # Don't raise exception if no processes found
+        )
+        if result.returncode != 0:
+            return []
+        return [int(pid) for pid in result.stdout.strip().split() if pid]
+    except (subprocess.SubprocessError, ValueError):
+        return []
+
+
+def get_pids_macos(process_path: str) -> List[int]:
+    """Get list of PIDs matching the given process path on macOS."""
+    try:
+        # On macOS, use ps with grep for better compatibility
+        result = subprocess.run(
+            ["ps", "aux"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        pids = []
+        for line in result.stdout.strip().split('\n')[1:]:  # Skip header
+            parts = line.split(None, 10)  # Split into max 11 parts
+            if len(parts) >= 11:
+                pid = parts[1]
+                command = parts[10]
+                if process_path in command:
+                    try:
+                        pids.append(int(pid))
+                    except ValueError:
+                        continue
+        return pids
+    except (subprocess.SubprocessError, ValueError, IndexError):
+        return []
+
+
+def get_pids(process_path: str) -> List[int]:
+    """Get list of PIDs matching the given process path."""
+    system = platform.system()
+    
+    if system == "Linux":
+        return get_pids_linux(process_path)
+    elif system == "Darwin":  # macOS
+        return get_pids_macos(process_path)
+    else:
+        print(f"Warning: Unsupported OS '{system}', attempting Linux method...", file=sys.stderr)
+        return get_pids_linux(process_path)
+
+
+def get_rss_kb_linux(pid: int) -> int:
+    """Get the RSS memory of a given PID in KB on Linux."""
+    try:
+        result = subprocess.run(
+            ["ps", "-o", "rss=", "-p", str(pid)],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return int(result.stdout.strip())
+    except (subprocess.SubprocessError, ValueError):
+        return 0
+
+
+def get_rss_kb_macos(pid: int) -> int:
+    """Get the RSS memory of a given PID in KB on macOS."""
+    try:
+        # On macOS, ps output might be in different units
+        result = subprocess.run(
+            ["ps", "-o", "rss=", "-p", str(pid)],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        # macOS ps returns RSS in KB like Linux
+        return int(result.stdout.strip())
+    except (subprocess.SubprocessError, ValueError):
+        return 0
+
+
+def get_rss_kb(pid: int) -> int:
+    """Get the RSS memory of a given PID in KB."""
+    system = platform.system()
+    
+    if system == "Linux":
+        return get_rss_kb_linux(pid)
+    elif system == "Darwin":  # macOS
+        return get_rss_kb_macos(pid)
+    else:
+        return get_rss_kb_linux(pid)  # Fallback to Linux method
+
+
+def format_memory(mb: float) -> str:
+    """Format memory size for display."""
+    if mb < 1024:
+        return f"{mb:.2f} MB"
+    else:
+        gb = mb / 1024
+        return f"{gb:.2f} GB"
+
+
+def main() -> None:
+    """Main entry point."""
+    # Check for help flag
+    if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help'):
+        print_help()
+    
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <process_path>")
+        print(f"Try '{sys.argv[0]} --help' for more information.")
+        sys.exit(1)
+
+    process_path = sys.argv[1]
+    system = platform.system()
+    
+    print(f"Searching for processes matching: {process_path}")
+    print(f"Operating System: {system}")
+    
+    pids = get_pids(process_path)
+
+    if not pids:
+        print(f"No processes found matching '{process_path}'")
+        sys.exit(1)
+
+    print(f"Found {len(pids)} matching process(es): {', '.join(map(str, pids))}")
+    
+    # Calculate total memory and show per-process if multiple
+    if len(pids) > 1:
+        print("\nPer-process memory usage:")
+        for pid in pids:
+            mem_kb = get_rss_kb(pid)
+            mem_mb = mem_kb / 1024
+            print(f"  PID {pid}: {format_memory(mem_mb)}")
+    
+    total_mem_kb = sum(get_rss_kb(pid) for pid in pids)
+    total_mem_mb = total_mem_kb / 1024
+
+    print(f"\nTotal memory usage: {format_memory(total_mem_mb)}")
+
+
+if __name__ == "__main__":
+    main()

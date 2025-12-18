@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -euo pipefail
+
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS] [N] [PATH]
+
+List the top N largest files and directories under PATH.
+
+Arguments:
+    N       Number of entries to show (default: 10)
+    PATH    Directory to scan (default: current directory)
+
+Options:
+    -h, --help    Show this help message
+
+Examples:
+    $(basename "$0")              # Top 10 in current directory
+    $(basename "$0") 20           # Top 20 in current directory
+    $(basename "$0") 5 /var       # Top 5 in /var
+    $(basename "$0") 10 ~         # Top 10 in home directory
+
+Note: Uses 'du' to calculate sizes, which may take time for large directories.
+EOF
+}
+
+# Check for help flag
+if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
+N=${1:-10}
+DIR=${2:-.}
+
+# Validate N is a number
+if ! [[ "$N" =~ ^[0-9]+$ ]]; then
+    echo "Error: First argument must be a positive integer" >&2
+    exit 1
+fi
+
+# Validate directory exists
+if [[ ! -d "$DIR" ]]; then
+    echo "Error: Directory '$DIR' does not exist" >&2
+    exit 1
+fi
+
+du -xh "$DIR" 2>/dev/null \
+  | sort -hr \
+  | head -n "$N"

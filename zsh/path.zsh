@@ -18,6 +18,9 @@ path_append() {
 path_prepend "${HOME}/.local/bin"
 path_prepend "${HOME}/bin"
 
+# Dotfiles bin directory
+path_prepend "${DOTFILES}/bin"
+
 # Common development tools
 path_prepend "${HOME}/.cargo/bin"      # Rust
 path_prepend "${HOME}/go/bin"          # Go

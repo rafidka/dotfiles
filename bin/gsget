@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Help function
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") <gs://path/to/file> [destination]
+
+Download a file from Google Cloud Storage to local directory.
+
+Arguments:
+    gs://path       Google Cloud Storage path (required)
+    destination     Local destination path (default: current directory)
+
+Options:
+    -h, --help      Show this help message and exit
+
+Examples:
+    $(basename "$0") gs://my-bucket/file.txt
+    $(basename "$0") gs://my-bucket/file.txt /tmp/
+    $(basename "$0") gs://my-bucket/file.txt downloaded-file.txt
+
+EOF
+    exit 0
+}
+
+# Check for help flag or no arguments
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]] || [[ $# -eq 0 ]]; then
+    show_help
+fi
+
+# Check if gsutil is installed
+if ! command -v gsutil &> /dev/null; then
+    echo "Error: gsutil is not installed or not in PATH" >&2
+    echo "Install it with: pip install gsutil" >&2
+    exit 1
+fi
+
+# Get source and destination
+SOURCE="$1"
+DEST="${2:-.}"
+
+# Validate source starts with gs://
+if [[ ! "$SOURCE" =~ ^gs:// ]]; then
+    SOURCE="gs://${SOURCE}"
+fi
+
+# Download the file
+echo "Downloading $SOURCE to $DEST"
+if gsutil -m cp -r "$SOURCE" "$DEST"; then
+    echo "✓ Download complete."
+else
+    echo "✗ Download failed." >&2
+    exit 1
+fi

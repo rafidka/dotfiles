@@ -1,0 +1,154 @@
+#!/bin/bash
+
+# Help function
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS] [username]
+
+Display process tree for a user.
+
+Arguments:
+    username        Username to show processes for (default: current user)
+
+Options:
+    -h, --help      Show this help message and exit
+    -a, --all       Show all details (equivalent to pstree -aglps)
+    -p, --pids      Show PIDs
+    -s, --simple    Simple tree without extra details
+
+Description:
+    Shows a hierarchical tree of all processes owned by the specified user.
+    By default shows detailed information including PIDs, command arguments,
+    and process groups.
+
+Examples:
+    $(basename "$0")                # Show your processes
+    $(basename "$0") root           # Show root's processes
+    $(basename "$0") --simple       # Simple tree view
+    $(basename "$0") --pids john    # Show john's processes with PIDs
+
+EOF
+    exit 0
+}
+
+# Check if pstree is available
+check_pstree() {
+    if ! command -v pstree &> /dev/null; then
+        echo "Error: pstree is not installed" >&2
+        echo "" >&2
+        
+        # Provide installation instructions based on OS
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            if command -v apt-get &> /dev/null; then
+                echo "Install with: sudo apt-get install psmisc" >&2
+            elif command -v yum &> /dev/null; then
+                echo "Install with: sudo yum install psmisc" >&2
+            elif command -v dnf &> /dev/null; then
+                echo "Install with: sudo dnf install psmisc" >&2
+            elif command -v pacman &> /dev/null; then
+                echo "Install with: sudo pacman -S psmisc" >&2
+            else
+                echo "Install the 'psmisc' package using your package manager" >&2
+            fi
+        elif [[ "$OSTYPE" == "darwin"* ]]; then
+            if command -v brew &> /dev/null; then
+                echo "Install with: brew install pstree" >&2
+            else
+                echo "Install Homebrew first, then run: brew install pstree" >&2
+            fi
+        else
+            echo "Install pstree using your system's package manager" >&2
+        fi
+        
+        echo "" >&2
+        echo "Alternative: Using ps to show processes (flat list):" >&2
+        exit 1
+    fi
+}
+
+# Fallback function using ps if pstree is not available
+fallback_ps() {
+    local username="$1"
+    echo "Showing processes for user: $username (flat list)"
+    echo ""
+    
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS ps syntax
+        ps -u "$username" -o pid,ppid,user,command
+    else
+        # Linux ps syntax
+        ps -u "$username" -f
+    fi
+}
+
+# Parse arguments
+MODE="detailed"
+USERNAME="${USER:-$(whoami)}"
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            ;;
+        -a|--all)
+            MODE="all"
+            shift
+            ;;
+        -p|--pids)
+            MODE="pids"
+            shift
+            ;;
+        -s|--simple)
+            MODE="simple"
+            shift
+            ;;
+        -*)
+            echo "Error: Unknown option $1" >&2
+            echo "Use --help for usage information" >&2
+            exit 1
+            ;;
+        *)
+            USERNAME="$1"
+            shift
+            ;;
+    esac
+done
+
+# Check if pstree is available
+check_pstree
+
+# Validate username exists
+if ! id "$USERNAME" &> /dev/null; then
+    echo "Error: User '$USERNAME' does not exist" >&2
+    exit 1
+fi
+
+echo "Process tree for user: $USERNAME"
+echo ""
+
+# Run pstree with appropriate options based on mode
+case $MODE in
+    all|detailed)
+        # Full details with arguments, PIDs, and security context
+        pstree -aglps "$USERNAME"
+        ;;
+    pids)
+        # Show with PIDs
+        pstree -p "$USERNAME"
+        ;;
+    simple)
+        # Simple tree
+        pstree "$USERNAME"
+        ;;
+    *)
+        # Default to detailed
+        pstree -aglps "$USERNAME"
+        ;;
+esac
+
+# If pstree fails, try the fallback
+if [[ $? -ne 0 ]]; then
+    echo "" >&2
+    echo "pstree failed, falling back to ps command:" >&2
+    fallback_ps "$USERNAME"
+fi

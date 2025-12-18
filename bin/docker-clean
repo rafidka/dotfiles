@@ -1,0 +1,76 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Help function
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Stop and remove all Docker containers and images.
+
+OPTIONS:
+    -h, --help      Show this help message and exit
+    -f, --force     Skip confirmation prompt
+
+WARNING: This is a destructive operation that cannot be undone!
+         All Docker containers and images will be permanently removed.
+
+Example:
+    $(basename "$0")        # Will prompt for confirmation
+    $(basename "$0") -f     # Skip confirmation
+
+EOF
+    exit 0
+}
+
+# Check for help flag
+if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+    show_help
+fi
+
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "Error: Docker is not installed or not in PATH" >&2
+    exit 1
+fi
+
+# Confirmation prompt unless forced
+if [[ "${1:-}" != "-f" ]] && [[ "${1:-}" != "--force" ]]; then
+    echo "WARNING: This will remove ALL Docker containers and images!"
+    read -p "Are you sure you want to continue? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Operation cancelled."
+        exit 0
+    fi
+fi
+
+# Stop all running containers
+echo "Stopping all running containers..."
+RUNNING_CONTAINERS=$(docker ps -q)
+if [[ -n "$RUNNING_CONTAINERS" ]]; then
+    docker stop $RUNNING_CONTAINERS
+else
+    echo "No running containers to stop."
+fi
+
+# Remove all containers
+echo "Removing all containers..."
+ALL_CONTAINERS=$(docker ps -a -q)
+if [[ -n "$ALL_CONTAINERS" ]]; then
+    docker rm $ALL_CONTAINERS
+else
+    echo "No containers to remove."
+fi
+
+# Remove all images
+echo "Removing all images..."
+ALL_IMAGES=$(docker images -q)
+if [[ -n "$ALL_IMAGES" ]]; then
+    docker rmi -f $ALL_IMAGES
+else
+    echo "No images to remove."
+fi
+
+echo "Docker cleanup complete."

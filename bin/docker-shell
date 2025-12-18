@@ -1,0 +1,85 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Help function
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS] <container>
+
+Open a shell session in a running Docker container.
+
+Arguments:
+    container       Partial container ID or name
+
+Options:
+    -h, --help      Show this help message and exit
+
+Description:
+    Connects to a running Docker container using an interactive shell.
+    Automatically detects and uses bash if available, otherwise falls back to sh.
+    Supports partial matching of container names/IDs.
+
+Examples:
+    $(basename "$0") web           # Connect to container with 'web' in name
+    $(basename "$0") abc123        # Connect using partial container ID
+
+EOF
+    exit 0
+}
+
+# Check for help flag
+if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+    show_help
+fi
+
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "Error: Docker is not installed or not in PATH" >&2
+    exit 1
+fi
+
+# Check if the container ID or name is provided
+if [[ -z "${1:-}" ]]; then
+    echo "Usage: $(basename "$0") <partial_container_id_or_name>"
+    echo ""
+    echo "Running containers:"
+    docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}"
+    exit 1
+fi
+
+PARTIAL_NAME=$1
+
+# Find container ID or name that matches the partial input
+MATCHING_CONTAINERS=$(docker ps --format '{{.ID}} {{.Names}}' | grep -E "$PARTIAL_NAME" || true)
+
+# Check if no matching containers were found
+if [[ -z "$MATCHING_CONTAINERS" ]]; then
+    echo "Error: No running containers found matching '$PARTIAL_NAME'."
+    echo ""
+    echo "Running containers:"
+    docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}"
+    exit 1
+fi
+
+# Check if multiple containers match the partial name
+if [[ $(echo "$MATCHING_CONTAINERS" | wc -l) -gt 1 ]]; then
+    echo "Error: Multiple containers match '$PARTIAL_NAME':"
+    echo "$MATCHING_CONTAINERS"
+    echo ""
+    echo "Please specify a more specific name or ID."
+    exit 1
+fi
+
+# Extract the exact container ID
+CONTAINER_ID=$(echo "$MATCHING_CONTAINERS" | awk '{print $1}')
+CONTAINER_NAME=$(echo "$MATCHING_CONTAINERS" | awk '{print $2}')
+
+echo "Connecting to container: $CONTAINER_NAME ($CONTAINER_ID)"
+
+# Try to enter with /bin/bash if available, otherwise fallback to /bin/sh
+if docker exec "$CONTAINER_ID" which bash &> /dev/null; then
+    docker exec -it "$CONTAINER_ID" /bin/bash
+else
+    docker exec -it "$CONTAINER_ID" /bin/sh
+fi

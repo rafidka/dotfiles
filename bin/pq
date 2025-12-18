@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""
+Convert Python data structures to formatted JSON.
+
+Usage:
+    pq [FILE]
+    echo '{"key": "value"}' | pq
+    pq -h|--help
+
+Arguments:
+    FILE    File containing Python literal (default: read from stdin)
+
+Description:
+    Parses Python literal syntax (dicts, lists, tuples, strings, numbers)
+    and outputs formatted JSON. Useful for converting Python repr() output
+    or debug logs to readable JSON.
+
+Examples:
+    echo "{'name': 'test', 'value': 123}" | pq
+    pq data.txt
+    echo "[1, 2, 3]" | pq
+"""
+
+import ast
+import json
+import sys
+
+
+def print_help():
+    print(__doc__)
+    sys.exit(0)
+
+
+def convert_to_json(data_str: str) -> str:
+    """Parse Python literal and convert to JSON."""
+    try:
+        data = ast.literal_eval(data_str)
+        return json.dumps(data, indent=2, ensure_ascii=False)
+    except (ValueError, SyntaxError) as e:
+        print(f"Error: Failed to parse input as Python literal: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def main():
+    # Handle help flag
+    if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help'):
+        print_help()
+
+    # Determine input source
+    if len(sys.argv) > 1:
+        # Read from file
+        filename = sys.argv[1]
+        try:
+            with open(filename, 'r') as f:
+                data_str = f.read().strip()
+        except FileNotFoundError:
+            print(f"Error: File '{filename}' not found", file=sys.stderr)
+            sys.exit(1)
+        except IOError as e:
+            print(f"Error: Failed to read file: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        # Read from stdin
+        if sys.stdin.isatty():
+            print("Error: No input provided. Pipe data or specify a file.", file=sys.stderr)
+            print("Use 'pq --help' for usage information.", file=sys.stderr)
+            sys.exit(1)
+        data_str = sys.stdin.read().strip()
+
+    # Check for empty input
+    if not data_str:
+        print("Error: Empty input", file=sys.stderr)
+        sys.exit(1)
+
+    # Convert and print
+    formatted_json = convert_to_json(data_str)
+    print(formatted_json)
+
+
+if __name__ == '__main__':
+    main()

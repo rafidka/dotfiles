@@ -1,0 +1,243 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Colors
+BOLD='\033[1m'
+DIM='\033[2m'
+CYAN='\033[36m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+MAGENTA='\033[35m'
+RESET='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: help [CATEGORY]
+
+Show available aliases, functions, and scripts from dotfiles.
+
+Categories:
+    all         Show everything (default)
+    aliases     Shell aliases only
+    functions   Shell functions only
+    bin         Bin scripts only
+    git         Git-related commands
+    docker      Docker-related commands
+    nav         Navigation shortcuts
+
+Examples:
+    help            # Show all commands
+    help git        # Show git-related commands
+    help bin        # Show bin scripts only
+EOF
+}
+
+section() {
+    echo -e "\n${BOLD}${CYAN}━━━ $1 ━━━${RESET}\n"
+}
+
+subsection() {
+    echo -e "${YELLOW}$1${RESET}"
+}
+
+cmd() {
+    printf "  ${GREEN}%-24s${RESET} %s\n" "$1" "$2"
+}
+
+show_aliases() {
+    section "ALIASES"
+
+    subsection "Directory Listing"
+    cmd "ls" "List files (colored)"
+    cmd "ll" "List files (long format)"
+    cmd "la" "List all files (including hidden)"
+    cmd "l" "List files (one per line)"
+
+    subsection "Navigation"
+    cmd ".." "cd .."
+    cmd "..." "cd ../.."
+    cmd "...." "cd ../../.."
+    cmd "....." "cd ../../../.."
+
+    subsection "Git"
+    cmd "g" "git"
+    cmd "gs" "git status"
+    cmd "gd" "git diff"
+    cmd "gds" "git diff --staged"
+    cmd "ga" "git add"
+    cmd "gc" "git commit"
+    cmd "gp" "git push"
+    cmd "gpl" "git pull"
+    cmd "gl" "git log --oneline -20"
+    cmd "glg" "git log --oneline --graph --all"
+    cmd "gb" "git branch"
+    cmd "gst" "git stash"
+    cmd "gstp" "git stash pop"
+
+    subsection "System"
+    cmd "topmem" "Top 20 processes by memory"
+    cmd "topcpu" "Top 20 processes by CPU"
+
+    subsection "Utilities"
+    cmd "cls" "Clear screen"
+    cmd "d" "docker"
+    cmd "icat" "Display image in terminal (timg)"
+    cmd "ipy" "ipython"
+    cmd "lgit" "lazygit"
+    cmd "newpass" "Generate random password"
+    cmd "py" "python3"
+    cmd "cat" "bat with plain output"
+    cmd "xcopy" "Copy to clipboard (Linux)"
+    cmd "xpaste" "Paste from clipboard (Linux)"
+
+    subsection "Quick Edit"
+    cmd "zshrc" "Edit ~/.zshrc"
+    cmd "vimrc" "Edit vim config"
+    cmd "localrc" "Edit local.zsh"
+    cmd "reload" "Reload shell config"
+
+    subsection "Safety (interactive)"
+    cmd "rm" "rm -i (confirm before delete)"
+    cmd "cp" "cp -i (confirm before overwrite)"
+    cmd "mv" "mv -i (confirm before overwrite)"
+}
+
+show_functions() {
+    section "FUNCTIONS"
+
+    cmd "mkcd <dir>" "Create directory and cd into it"
+    cmd "t" "cd to ~/temp (creates if needed)"
+    cmd "extract <file>" "Extract archives (.tar.gz, .zip, etc.)"
+    cmd "fzf_search_content" "Search file contents, open in vim"
+}
+
+show_bin() {
+    section "BIN SCRIPTS"
+
+    subsection "Docker"
+    cmd "docker-shell <name>" "Shell into container (partial match)"
+    cmd "docker-clean" "Remove all containers and images"
+    cmd "docker-purge" "Remove ALL Docker resources"
+
+    subsection "File Finding"
+    cmd "ffind <pattern>" "Fuzzy find files/directories"
+    cmd "ffind-fzf [query]" "Interactive file finder with fzf"
+
+    subsection "Process Tools"
+    cmd "mem_usage <proc>" "Memory usage by process name"
+    cmd "proctree [user]" "Show process tree for user"
+
+    subsection "Python"
+    cmd "pyclean [dir]" "Remove .venv, __pycache__, .pyc"
+
+    subsection "Data Utilities"
+    cmd "pq [file]" "Convert Python literals to JSON"
+    cmd "sumcol [col]" "Sum numeric column from stdin"
+    cmd "dotenv-export [file]" "Export .env as shell commands"
+
+    subsection "Disk"
+    cmd "topspace [N] [path]" "List N largest files/dirs"
+
+    subsection "Cloud"
+    cmd "gsget <gs://path>" "Download from Google Cloud Storage"
+}
+
+show_git() {
+    section "GIT COMMANDS"
+
+    subsection "Aliases"
+    cmd "g" "git"
+    cmd "gs" "git status"
+    cmd "gd" "git diff"
+    cmd "gds" "git diff --staged"
+    cmd "ga" "git add"
+    cmd "gc" "git commit"
+    cmd "gp" "git push"
+    cmd "gpl" "git pull"
+    cmd "gl" "git log --oneline -20"
+    cmd "glg" "git log --oneline --graph --all"
+    cmd "gb" "git branch"
+    cmd "gst" "git stash"
+    cmd "gstp" "git stash pop"
+
+    subsection "Tools"
+    cmd "lgit" "lazygit"
+}
+
+show_docker() {
+    section "DOCKER COMMANDS"
+
+    subsection "Aliases"
+    cmd "d" "docker"
+
+    subsection "Scripts"
+    cmd "docker-shell <name>" "Shell into container (partial match)"
+    cmd "docker-clean" "Remove all containers and images"
+    cmd "docker-purge" "Remove ALL Docker resources"
+}
+
+show_nav() {
+    section "NAVIGATION"
+
+    subsection "Aliases"
+    cmd ".." "cd .."
+    cmd "..." "cd ../.."
+    cmd "...." "cd ../../.."
+    cmd "....." "cd ../../../.."
+
+    subsection "Functions"
+    cmd "mkcd <dir>" "Create directory and cd into it"
+    cmd "t" "cd to ~/temp"
+
+    subsection "File Finding"
+    cmd "ffind <pattern>" "Fuzzy find files/directories"
+    cmd "ffind-fzf [query]" "Interactive file finder with fzf"
+}
+
+show_all() {
+    echo -e "${BOLD}${MAGENTA}"
+    echo "╔═══════════════════════════════════════╗"
+    echo "║       DOTFILES COMMAND REFERENCE      ║"
+    echo "╚═══════════════════════════════════════╝"
+    echo -e "${RESET}"
+    echo -e "${DIM}Use 'help <category>' to filter (git, docker, nav, etc.)${RESET}"
+    echo -e "${DIM}Use '<command> --help' for detailed usage${RESET}"
+
+    show_aliases
+    show_functions
+    show_bin
+}
+
+# Main
+case "${1:-all}" in
+    -h|--help)
+        show_usage
+        ;;
+    all)
+        show_all
+        ;;
+    aliases|alias)
+        show_aliases
+        ;;
+    functions|func)
+        show_functions
+        ;;
+    bin|scripts)
+        show_bin
+        ;;
+    git)
+        show_git
+        ;;
+    docker)
+        show_docker
+        ;;
+    nav|navigation)
+        show_nav
+        ;;
+    *)
+        echo "Unknown category: $1" >&2
+        echo "Use 'help --help' for available categories" >&2
+        exit 1
+        ;;
+esac

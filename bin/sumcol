@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Help function
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS] [column]
+
+Sum numeric values from a specified column of input.
+
+Arguments:
+    column          Column number to sum (default: 1)
+
+Options:
+    -h, --help      Show this help message and exit
+
+Description:
+    Reads from stdin and sums all numeric values in the specified column.
+    Columns are numbered starting from 1.
+
+Examples:
+    # Sum first column (default)
+    echo -e "10\\n20\\n30" | $(basename "$0")
+    
+    # Sum second column
+    echo -e "a 10\\nb 20\\nc 30" | $(basename "$0") 2
+    
+    # Sum values from a file
+    cat data.txt | $(basename "$0") 3
+
+EOF
+    exit 0
+}
+
+# Check for help flag
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    show_help
+fi
+
+# Get column number (default to 1)
+COLUMN="${1:-1}"
+
+# Validate column is a number
+if ! [[ "$COLUMN" =~ ^[0-9]+$ ]]; then
+    echo "Error: Column must be a positive integer" >&2
+    exit 1
+fi
+
+# Sum the specified column
+awk -v col="$COLUMN" '
+    {
+        if (NF >= col && $col ~ /^-?[0-9]+\.?[0-9]*$/) {
+            sum += $col
+            count++
+        }
+    }
+    END {
+        if (count > 0) {
+            print sum
+        } else {
+            print 0
+        }
+    }'
