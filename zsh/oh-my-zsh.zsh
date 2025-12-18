@@ -34,11 +34,13 @@ fi
 # Override agnoster prompt segments if desired
 
 # Context segment: show user@host only when relevant
+# Set DOTFILES_PROMPT_COLOR in local.zsh to customize (red, magenta, blue, etc.)
 prompt_context() {
+    local color="${DOTFILES_PROMPT_COLOR:-red}"
     if [[ -n "$DOTFILES_PROMPT_LABEL" ]]; then
-        prompt_segment red default "$DOTFILES_PROMPT_LABEL"
+        prompt_segment "$color" default "$DOTFILES_PROMPT_LABEL"
     elif [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" || -n "$SSH_CONNECTION" ]]; then
-        prompt_segment red default "%(!.%{%F{yellow}%}.)$USER@%m"
+        prompt_segment "$color" default "%(!.%{%F{yellow}%}.)$USER@%m"
     fi
 }
 
