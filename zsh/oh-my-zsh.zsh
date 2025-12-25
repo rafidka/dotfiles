@@ -1,10 +1,17 @@
 # zsh/oh-my-zsh.zsh - Oh-My-Zsh configuration
 
+# Enable Powerlevel10k instant prompt. Should stay close to the top.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 # Path to oh-my-zsh installation
 export ZSH="$HOME/.oh-my-zsh"
 
 # Theme configuration
-ZSH_THEME="agnoster"
+ZSH_THEME="powerlevel10k/powerlevel10k"
 
 # Plugins to load
 plugins=(
@@ -30,25 +37,5 @@ else
     echo "Warning: oh-my-zsh not found. Run install.sh to set it up." >&2
 fi
 
-# Custom prompt modifications (after oh-my-zsh loads)
-# Override agnoster prompt segments if desired
-
-# Context segment: show user@host only when relevant
-# Set DOTFILES_PROMPT_COLOR in local.zsh to customize (red, magenta, blue, etc.)
-prompt_context() {
-    local color="${DOTFILES_PROMPT_COLOR:-red}"
-    if [[ -n "$DOTFILES_PROMPT_LABEL" ]]; then
-        prompt_segment "$color" default "$DOTFILES_PROMPT_LABEL"
-    elif [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" || -n "$SSH_CONNECTION" ]]; then
-        prompt_segment "$color" default "%(!.%{%F{yellow}%}.)$USER@%m"
-    fi
-}
-
-# Python virtualenv display
-prompt_virtualenv() {
-    if [[ -n "$VIRTUAL_ENV" ]]; then
-        prompt_segment blue black "($(basename $VIRTUAL_ENV))"
-    elif [[ -n "$CONDA_DEFAULT_ENV" ]]; then
-        prompt_segment blue black "(c:$CONDA_DEFAULT_ENV)"
-    fi
-}
+# Load powerlevel10k configuration if it exists
+[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh

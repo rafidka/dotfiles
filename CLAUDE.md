@@ -111,7 +111,7 @@ execute 'set runtimepath+=' . s:vimdir . '/after'
 
 ## Oh-My-Zsh Configuration
 
-- **Theme**: agnoster
+- **Theme**: powerlevel10k (run `p10k configure` to customize)
 - **Plugins**: git, colored-man-pages, zsh-autosuggestions, zsh-syntax-highlighting, zsh-completions
 
 ## Shell Functions

@@ -58,6 +58,14 @@ else
     echo "  - fzf-tab already installed"
 fi
 
+# powerlevel10k theme
+if [[ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ]]; then
+    echo "  - Installing powerlevel10k..."
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
+else
+    echo "  - powerlevel10k already installed"
+fi
+
 # --- FZF Installation ---
 echo "[3/4] Installing FZF..."
 if [[ ! -d "$HOME/.fzf" ]]; then
