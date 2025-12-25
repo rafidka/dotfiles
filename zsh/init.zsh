@@ -23,3 +23,6 @@ source "${DOTFILES}/zsh/aliases.zsh"
 
 # 7. Local overrides (machine-specific, gitignored)
 [[ -f "${DOTFILES}/zsh/local.zsh" ]] && source "${DOTFILES}/zsh/local.zsh" || true
+
+# 8. Load secrets
+[[ -f ~/.secrets ]] && source ~/.secrets
