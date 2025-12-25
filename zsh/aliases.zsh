@@ -57,6 +57,10 @@ elif command -v bat &>/dev/null; then
     alias cat='bat -pp'
 fi
 
+# --- cat like for CSV/TSV ---
+alias cat_csv="column -s, -t"
+alias cat_tsv="column -ts $'\t'"
+
 # --- Clipboard (Linux) ---
 if [[ "$(uname)" == "Linux" ]] && command -v xclip &> /dev/null; then
     alias xcopy='xclip -selection clipboard'
