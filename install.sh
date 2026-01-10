@@ -123,7 +123,7 @@ fi
 
 if [[ -n "$MISSING_TOOLS" ]]; then
     echo ""
-    echo "Recommended tools not found:$MISSING_TOOLS"
+    echo -e "\033[1;33mRecommended tools not found:$MISSING_TOOLS\033[0m"
     echo "Some aliases depend on these tools. Install them for full functionality."
 fi
 echo ""

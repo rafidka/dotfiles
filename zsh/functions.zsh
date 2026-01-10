@@ -46,8 +46,6 @@ fzf_search_content() {
     local file line
     if command -v rg &> /dev/null; then
         read -r file line <<< $(rg --line-number --no-heading . 2>/dev/null | fzf --delimiter=: --preview 'bat --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || head -100 {1}' | awk -F: '{print $1, $2}')
-    elif command -v ag &> /dev/null; then
-        read -r file line <<< $(ag --nobreak --noheading . 2>/dev/null | fzf | awk -F: '{print $1, $2}')
     else
         read -r file line <<< $(grep -rn . 2>/dev/null | fzf | awk -F: '{print $1, $2}')
     fi
