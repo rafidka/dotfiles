@@ -27,10 +27,10 @@ if command -v bat &> /dev/null; then
     export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always --line-range :500 {}'"
 fi
 
-# Ctrl-F: Search file contents with ag and fzf, open in vim
-fzf-ag-content-widget() {
-    if ! command -v ag &> /dev/null; then
-        zle -M "ag (silver searcher) is not installed"
+# Ctrl-F: Search file contents with ripgrep and fzf, open in vim
+fzf-rg-content-widget() {
+    if ! command -v rg &> /dev/null; then
+        zle -M "ripgrep (rg) is not installed"
         return 1
     fi
     if ! command -v fzf &> /dev/null; then
@@ -39,7 +39,7 @@ fzf-ag-content-widget() {
     fi
 
     local result file line
-    result=$(ag --nobreak --noheading --color . 2>/dev/null | \
+    result=$(rg --line-number --no-heading --color=always . 2>/dev/null | \
         fzf --ansi --delimiter=: \
             --preview 'bat --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || head -100 {1}' \
             --preview-window '+{2}-10')
@@ -53,8 +53,8 @@ fzf-ag-content-widget() {
     fi
     zle reset-prompt
 }
-zle -N fzf-ag-content-widget
-bindkey '^F' fzf-ag-content-widget
+zle -N fzf-rg-content-widget
+bindkey '^F' fzf-rg-content-widget
 
 # Ctrl-G: Fuzzy git status - select modified files to open in vim
 fzf-git-status-widget() {
