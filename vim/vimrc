@@ -42,6 +42,9 @@ Plug 'tell-k/vim-autopep8'
 " Git integration
 Plug 'airblade/vim-gitgutter'
 
+" Which-key (shows available keybindings)
+Plug 'liuchengxu/vim-which-key'
+
 call plug#end()
 
 " --- General Settings ---
@@ -120,7 +123,7 @@ nnoremap ]b :bnext<CR>
 nnoremap <Leader>bd :bdelete<CR>
 
 " Clear search highlight
-nnoremap <Leader><space> :nohlsearch<CR>
+nnoremap <Leader>/ :nohlsearch<CR>
 
 " Quick save and quit
 nnoremap <Leader>w :w<CR>
@@ -172,3 +175,88 @@ nnoremap <Leader>ap :Autopep8<CR>
 let &t_SI = "\e[6 q"  " Insert mode: bar
 let &t_EI = "\e[2 q"  " Normal mode: block
 let &t_SR = "\e[4 q"  " Replace mode: underline
+
+" --- Which-Key Configuration ---
+let g:which_key_map = {}
+
+" File/Find commands
+let g:which_key_map.f = {
+    \ 'name': '+file/find',
+    \ 'f': 'find files',
+    \ 'g': 'git files',
+    \ 'b': 'buffers',
+    \ 'c': 'search content (rg)',
+    \ 'h': 'file history',
+    \ }
+
+" Buffer commands
+let g:which_key_map.b = {
+    \ 'name': '+buffer',
+    \ 'd': 'delete buffer',
+    \ }
+
+" Quick actions
+let g:which_key_map.w = 'save'
+let g:which_key_map.q = 'quit'
+let g:which_key_map.x = 'save and quit'
+let g:which_key_map['/'] = 'clear search highlight'
+
+" Clipboard
+let g:which_key_map.y = 'clipboard yank'
+let g:which_key_map.p = 'clipboard paste'
+let g:which_key_map.P = 'clipboard paste before'
+
+" Autopep8
+let g:which_key_map.a = {
+    \ 'name': '+actions',
+    \ 'p': 'autopep8 format',
+    \ }
+
+" Register which-key (after plugins load)
+autocmd! User vim-which-key call which_key#register('<Space>', "g:which_key_map")
+nnoremap <silent> <Leader> :<C-u>WhichKey '<Space>'<CR>
+vnoremap <silent> <Leader> :<C-u>WhichKeyVisual '<Space>'<CR>
+set timeoutlen=500   " Time for mapped sequences (which-key popup)
+set ttimeoutlen=10   " Time for terminal key codes (fast Escape)
+
+" --- FZF Shortcut Picker ---
+" Define shortcuts as [keys, description, command]
+let s:shortcut_list = [
+    \ ['ff',  'Find files',              ':Files'],
+    \ ['fg',  'Git files',               ':GFiles'],
+    \ ['fb',  'Buffers',                 ':Buffers'],
+    \ ['fc',  'Search content (ripgrep)', ':Rg'],
+    \ ['fh',  'File history',            ':History'],
+    \ ['bd',  'Delete buffer',           ':bdelete'],
+    \ ['w',   'Save',                    ':w'],
+    \ ['q',   'Quit',                    ':q'],
+    \ ['x',   'Save and quit',           ':x'],
+    \ ['/',   'Clear search highlight',  ':nohlsearch'],
+    \ ['ap',  'Autopep8 format',         ':Autopep8'],
+    \ ]
+
+function! s:shortcuts_sink(line)
+    let l:key = matchstr(a:line, '^\S\+')
+    for [keys, desc, cmd] in s:shortcut_list
+        if keys ==# l:key
+            execute cmd
+            return
+        endif
+    endfor
+endfunction
+
+function! s:list_shortcuts()
+    let l:result = []
+    for [keys, desc, cmd] in s:shortcut_list
+        call add(l:result, printf('%-6s  %s', keys, desc))
+    endfor
+    return l:result
+endfunction
+
+command! Shortcuts call fzf#run(fzf#wrap({
+    \ 'source': s:list_shortcuts(),
+    \ 'sink': function('s:shortcuts_sink'),
+    \ 'options': '--prompt="Shortcuts> "'
+    \ }))
+
+nnoremap <Leader><Leader> :Shortcuts<CR>

@@ -220,16 +220,22 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 - **vim-commentary**, **vim-surround**, **vim-fugitive** - Utilities
 - **vim-autopep8** - Python formatting
 - **vim-gitgutter** - Git diff in gutter
+- **vim-which-key** - Shows available keybindings popup
 
 ### Vim Key Mappings (Leader = Space)
 
 | Mapping | Action |
 |---------|--------|
+| `<Space>` | Show which-key popup (wait 500ms) |
+| `<Space><Space>` | FZF shortcut picker |
 | `<Space>ff` | Find files |
 | `<Space>fc` | Find in files (ripgrep) |
 | `<Space>fb` | List buffers |
 | `<Space>fg` | Find git files |
 | `<Space>fh` | File history |
+| `<Space>/` | Clear search highlight |
+| `<Space>y` | Yank to system clipboard |
+| `<Space>p` | Paste from system clipboard |
 | `<Space>ap` | Run autopep8 |
 | `[b` / `]b` | Previous/next buffer |
 
