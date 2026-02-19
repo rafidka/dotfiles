@@ -45,6 +45,29 @@ Plug 'airblade/vim-gitgutter'
 " Which-key (shows available keybindings)
 Plug 'liuchengxu/vim-which-key'
 
+" --- Neovim-only plugins ---
+if has('nvim')
+    " Colorscheme (treesitter-aware)
+    Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
+
+    " Treesitter (better syntax highlighting)
+    Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+
+    " LSP Support
+    Plug 'neovim/nvim-lspconfig'
+
+    " Autocompletion
+    Plug 'hrsh7th/nvim-cmp'
+    Plug 'hrsh7th/cmp-nvim-lsp'
+    Plug 'hrsh7th/cmp-buffer'
+    Plug 'hrsh7th/cmp-path'
+    Plug 'hrsh7th/cmp-cmdline'
+
+    " Snippets (required for nvim-cmp)
+    Plug 'L3MON4D3/LuaSnip'
+    Plug 'saadparwaiz1/cmp_luasnip'
+endif
+
 call plug#end()
 
 " --- General Settings ---
@@ -59,7 +82,9 @@ set showmatch
 set wildmenu
 set wildmode=longest:full,full
 set mouse=a
-set ttymouse=sgr
+if !has('nvim')
+    set ttymouse=sgr
+endif
 set hidden
 set updatetime=300
 set signcolumn=yes
@@ -102,8 +127,12 @@ if has('termguicolors')
     set termguicolors
 endif
 set background=dark
-colorscheme codedark
-let g:airline_theme = 'codedark'
+if has('nvim')
+    colorscheme catppuccin
+else
+    colorscheme codedark
+    let g:airline_theme = 'codedark'
+endif
 
 " --- Leader Key ---
 let mapleader = " "
@@ -172,9 +201,13 @@ let g:autopep8_disable_show_diff = 1
 nnoremap <Leader>ap :Autopep8<CR>
 
 " --- Cursor Shape ---
-let &t_SI = "\e[6 q"  " Insert mode: bar
-let &t_EI = "\e[2 q"  " Normal mode: block
-let &t_SR = "\e[4 q"  " Replace mode: underline
+if has('nvim')
+    set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
+else
+    let &t_SI = "\e[6 q"  " Insert mode: bar
+    let &t_EI = "\e[2 q"  " Normal mode: block
+    let &t_SR = "\e[4 q"  " Replace mode: underline
+endif
 
 " --- Which-Key Configuration ---
 let g:which_key_map = {}
@@ -211,6 +244,17 @@ let g:which_key_map.a = {
     \ 'name': '+actions',
     \ 'p': 'autopep8 format',
     \ }
+
+" LSP (neovim only - configured in lua/nvim-config.lua)
+if has('nvim')
+    let g:which_key_map.l = {
+        \ 'name': '+lsp',
+        \ 'r': 'rename',
+        \ 'a': 'code action',
+        \ 'f': 'format',
+        \ 'd': 'diagnostics',
+        \ }
+endif
 
 " Register which-key (after plugins load)
 autocmd! User vim-which-key call which_key#register('<Space>', "g:which_key_map")
@@ -260,3 +304,8 @@ command! Shortcuts call fzf#run(fzf#wrap({
     \ }))
 
 nnoremap <Leader><Leader> :Shortcuts<CR>
+
+" --- Neovim-specific configuration ---
+if has('nvim')
+    lua require('nvim-config')
+endif

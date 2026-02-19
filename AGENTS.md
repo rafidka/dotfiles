@@ -27,7 +27,9 @@ zsh/
   functions.zsh      # Shell functions
   local.zsh          # Machine-specific (gitignored)
 vim/
-  vimrc              # Main vim config
+  vimrc              # Main vim config (shared vim/neovim)
+  lua/               # Neovim-specific Lua config
+    nvim-config.lua  # Treesitter, LSP, completion setup
   after/ftplugin/    # Filetype-specific settings
 ```
 
@@ -222,6 +224,12 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 - **vim-gitgutter** - Git diff in gutter
 - **vim-which-key** - Shows available keybindings popup
 
+**Neovim-only plugins:**
+- **nvim-treesitter** - Better syntax highlighting
+- **nvim-lspconfig** - LSP configuration
+- **nvim-cmp** - Autocompletion (with buffer, path, cmdline sources)
+- **LuaSnip** - Snippet engine
+
 ### Vim Key Mappings (Leader = Space)
 
 | Mapping | Action |
@@ -238,6 +246,13 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 | `<Space>p` | Paste from system clipboard |
 | `<Space>ap` | Run autopep8 |
 | `[b` / `]b` | Previous/next buffer |
+| `gd` | Go to definition (neovim LSP) |
+| `gr` | Find references (neovim LSP) |
+| `K` | Hover documentation (neovim LSP) |
+| `<Space>lr` | LSP rename (neovim) |
+| `<Space>la` | LSP code action (neovim) |
+| `<Space>lf` | LSP format (neovim) |
+| `[d` / `]d` | Previous/next diagnostic (neovim) |
 
 ### Shell Functions
 
