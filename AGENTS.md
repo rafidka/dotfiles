@@ -225,6 +225,8 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 - **vim-which-key** - Shows available keybindings popup
 
 **Neovim-only plugins:**
+- **nvim-tree** - File explorer sidebar
+- **nvim-web-devicons** - File icons
 - **nvim-treesitter** - Better syntax highlighting
 - **nvim-lspconfig** - LSP configuration
 - **nvim-cmp** - Autocompletion (with buffer, path, cmdline sources)
@@ -241,6 +243,8 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 | `<Space>fb` | List buffers |
 | `<Space>fg` | Find git files |
 | `<Space>fh` | File history |
+| `<Space>fe` | File explorer (neovim) |
+| `<Space>e` | File explorer (neovim) |
 | `<Space>/` | Clear search highlight |
 | `<Space>y` | Yank to system clipboard |
 | `<Space>p` | Paste from system clipboard |

@@ -50,6 +50,10 @@ if has('nvim')
     " Colorscheme (treesitter-aware)
     Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 
+    " File explorer
+    Plug 'nvim-tree/nvim-web-devicons'
+    Plug 'nvim-tree/nvim-tree.lua'
+
     " Treesitter (better syntax highlighting)
     Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 
@@ -220,7 +224,11 @@ let g:which_key_map.f = {
     \ 'b': 'buffers',
     \ 'c': 'search content (rg)',
     \ 'h': 'file history',
+    \ 'e': 'file explorer',
     \ }
+
+" File explorer (quick access)
+let g:which_key_map.e = 'file explorer'
 
 " Buffer commands
 let g:which_key_map.b = {

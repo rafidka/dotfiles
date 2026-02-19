@@ -21,8 +21,55 @@ if plugin_loaded('catppuccin') then
             },
             cmp = true,
             gitsigns = true,
+            nvimtree = true,
         },
     })
+end
+
+--------------------------------------------------------------------------------
+-- Nvim-tree File Explorer
+--------------------------------------------------------------------------------
+if plugin_loaded('nvim-tree') then
+    -- Disable netrw (vim's built-in file explorer)
+    vim.g.loaded_netrw = 1
+    vim.g.loaded_netrwPlugin = 1
+
+    require('nvim-tree').setup({
+        sort = {
+            sorter = 'case_sensitive',
+        },
+        view = {
+            width = 35,
+        },
+        renderer = {
+            group_empty = true,
+            icons = {
+                show = {
+                    file = true,
+                    folder = true,
+                    folder_arrow = true,
+                    git = true,
+                },
+            },
+        },
+        filters = {
+            dotfiles = false,  -- Show dotfiles
+            git_ignored = false,  -- Show git ignored files
+        },
+        git = {
+            enable = true,
+            ignore = false,
+        },
+        actions = {
+            open_file = {
+                quit_on_open = false,  -- Keep tree open when opening file
+            },
+        },
+    })
+
+    -- Keymaps
+    vim.keymap.set('n', '<Leader>e', ':NvimTreeToggle<CR>', { silent = true, desc = 'Toggle file explorer' })
+    vim.keymap.set('n', '<Leader>fe', ':NvimTreeToggle<CR>', { silent = true, desc = 'Toggle file explorer' })
 end
 
 --------------------------------------------------------------------------------
@@ -67,18 +114,8 @@ vim.api.nvim_create_autocmd('FileType', {
     end,
 })
 
--- Incremental selection keymaps
-vim.keymap.set('n', '<CR>', function()
-    require('nvim-treesitter.incremental_selection').init_selection()
-end, { desc = 'Start incremental selection' })
-
-vim.keymap.set('v', '<CR>', function()
-    require('nvim-treesitter.incremental_selection').node_incremental()
-end, { desc = 'Expand selection to node' })
-
-vim.keymap.set('v', '<BS>', function()
-    require('nvim-treesitter.incremental_selection').node_decremental()
-end, { desc = 'Shrink selection' })
+-- NOTE: Incremental selection was removed in the new nvim-treesitter rewrite.
+-- The old API (nvim-treesitter.incremental_selection) no longer exists.
 
 --------------------------------------------------------------------------------
 -- LSP Configuration (nvim 0.11+ using vim.lsp.config)
