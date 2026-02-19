@@ -57,7 +57,6 @@ set wildmenu
 set wildmode=longest:full,full
 set mouse=a
 set ttymouse=sgr
-set clipboard=unnamedplus
 set hidden
 set updatetime=300
 set signcolumn=yes
@@ -127,6 +126,13 @@ nnoremap <Leader><space> :nohlsearch<CR>
 nnoremap <Leader>w :w<CR>
 nnoremap <Leader>q :q<CR>
 nnoremap <Leader>x :x<CR>
+
+" System clipboard (Leader+y to copy, Leader+p to paste)
+nnoremap <Leader>y "+y
+vnoremap <Leader>y "+y
+nnoremap <Leader>p "+p
+vnoremap <Leader>p "+p
+nnoremap <Leader>P "+P
 
 " Window navigation
 nnoremap <C-h> <C-w>h
