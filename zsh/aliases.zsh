@@ -40,6 +40,13 @@ else
     alias topcpu='ps aux --sort=-%cpu | head -20'
 fi
 
+# --- Neovim (prefer nvim over vim if available) ---
+if command -v nvim &>/dev/null; then
+    alias vim='nvim'
+    alias vi='nvim'
+    alias v='nvim'
+fi
+
 # --- Utilities ---
 alias cls='clear'
 alias d='docker'

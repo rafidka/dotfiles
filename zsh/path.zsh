@@ -28,9 +28,14 @@ path_prepend "${HOME}/go/bin"          # Go
 # FZF (if installed in standard location)
 [[ -d "${HOME}/.fzf/bin" ]] && path_prepend "${HOME}/.fzf/bin"
 
-# Default editor
-export EDITOR="${EDITOR:-vim}"
-export VISUAL="${VISUAL:-vim}"
+# Default editor (prefer nvim if available)
+if command -v nvim &>/dev/null; then
+    export EDITOR="${EDITOR:-nvim}"
+    export VISUAL="${VISUAL:-nvim}"
+else
+    export EDITOR="${EDITOR:-vim}"
+    export VISUAL="${VISUAL:-vim}"
+fi
 
 # Vim configuration - use VIMINIT to source our vimrc without symlinks
 export VIMINIT="source ${DOTFILES}/vim/vimrc"
