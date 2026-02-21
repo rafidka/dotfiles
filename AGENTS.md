@@ -236,6 +236,8 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 - **which-key.nvim** - Keybinding helper (replaces vim-which-key)
 - **lazygit.nvim** - LazyGit integration
 - **diffview.nvim** - Git diff viewer
+- **persistence.nvim** - Session management (auto-save/restore)
+- **bufferline.nvim** - Tab bar with buffer management
 
 ### Vim Key Mappings (Leader = Space)
 
@@ -243,28 +245,76 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 |---------|--------|
 | `<Space>` | Show which-key popup (wait 500ms) |
 | `<Space><Space>` | Shortcut picker (FZF in vim, Telescope in neovim) |
+| **File/Find (`<Space>f`)** | |
 | `<Space>ff` | Find files |
 | `<Space>fc` | Find in files (ripgrep) |
 | `<Space>fb` | List buffers |
 | `<Space>fg` | Find git files |
 | `<Space>fh` | File history |
-| `<Space>fe` | File explorer (neovim) |
-| `<Space>e` | File explorer (neovim) |
-| `<Space>/` | Clear highlight (vim) / Search in buffer (neovim) |
-| `<Space>y` | Yank to system clipboard |
-| `<Space>p` | Paste from system clipboard |
-| `<Space>ap` | Run autopep8 |
-| `[b` / `]b` | Previous/next buffer |
-| `gd` | Go to definition (neovim LSP) |
-| `gr` | Find references (neovim LSP) |
-| `K` | Hover documentation (neovim LSP) |
-| `<Space>lr` | LSP rename (neovim) |
-| `<Space>la` | LSP code action (neovim) |
-| `<Space>lf` | LSP format (neovim) |
-| `[d` / `]d` | Previous/next diagnostic (neovim) |
+| `<Space>fs` | Document symbols (neovim) |
+| `<Space>fd` | Diagnostics (neovim) |
+| `<Space>fk` | All keymaps (neovim) |
+| `<Space>fr` | Resume last search (neovim) |
+| `<Space>fe` / `<Space>e` | File explorer (neovim) |
+| **Search (`<Space>s`)** | |
+| `<Space>ss` | Search in project (grep) |
+| `<Space>sw` | Search word under cursor |
+| `<Space>sb` | Search in buffer |
+| `<Space>sr` | Search & replace |
+| `<Space>sR` | Replace word under cursor |
+| `<Space>sn` | Clear search highlight |
+| **Code (`<Space>c`)** | |
+| `<Space>cf` | Format buffer |
+| `<Space>cr` | Rename symbol |
+| `<Space>ca` | Code action |
+| `<Space>cd` | Line diagnostics |
+| `<Space>ci` | Organize imports |
+| **Git (`<Space>g`)** | |
 | `<Space>gg` | Open LazyGit (neovim) |
 | `<Space>gd` | Open diff view (neovim) |
 | `<Space>gh` | File git history (neovim) |
+| `<Space>gH` | Branch git history (neovim) |
+| `<Space>gf` | LazyGit file history (neovim) |
+| `<Space>gq` | Close diff view (neovim) |
+| **LSP (`<Space>l`)** | |
+| `<Space>lr` | LSP rename (neovim) |
+| `<Space>la` | LSP code action (neovim) |
+| `<Space>lf` | LSP format (neovim) |
+| `<Space>ld` | LSP diagnostics (neovim) |
+| **Tabs (`<Space>t`)** | |
+| `<Space>th` | Previous tab |
+| `<Space>tn` | Next tab |
+| `<Space>td` | Close current tab |
+| `<Space>to` | Close other tabs |
+| `<Space>tl` / `tr` | Close tabs left/right |
+| `<Space>tp` | Pin/unpin tab |
+| `<Space>ts` | Pick tab (letter indicators) |
+| `<Space>tf` | Find tab (fuzzy search) |
+| `<Space>t1-9` | Jump to tab 1-9 |
+| **UI Toggles (`<Space>u`)** | |
+| `<Space>un` | Toggle line numbers |
+| `<Space>ur` | Toggle relative numbers |
+| `<Space>uw` | Toggle word wrap |
+| `<Space>us` | Toggle spell check |
+| `<Space>ul` | Toggle list chars |
+| `<Space>uc` | Toggle cursor line |
+| `<Space>ud` | Toggle diagnostics |
+| `<Space>ut` | Toggle treesitter highlight |
+| **Session (`<Space>q`)** | |
+| `<Space>qs` | Restore session (cwd) |
+| `<Space>ql` | Restore last session |
+| `<Space>qS` | Save session |
+| `<Space>qd` | Don't save session |
+| **Quick Actions** | |
+| `<Space>w` / `q` / `x` | Save / Quit / Save+Quit |
+| `<Space>/` | Clear highlight (vim) / Search in buffer (neovim) |
+| `<Space>y` / `p` / `P` | System clipboard yank/paste |
+| `<Space>ap` | Run autopep8 |
+| **Navigation** | |
+| `[d` / `]d` | Previous/next diagnostic (neovim) |
+| `gd` | Go to definition (neovim LSP) |
+| `gr` | Find references (neovim LSP) |
+| `K` | Hover documentation (neovim LSP) |
 
 ### Shell Functions
 

@@ -70,6 +70,9 @@ if has('nvim')
     " Which-key
     Plug 'folke/which-key.nvim'
 
+    " Buffer line (tab bar)
+    Plug 'akinsho/bufferline.nvim', { 'tag': '*' }
+
     " Git
     Plug 'kdheepak/lazygit.nvim'
     Plug 'sindrets/diffview.nvim'
@@ -90,6 +93,9 @@ if has('nvim')
     " Snippets (required for nvim-cmp)
     Plug 'L3MON4D3/LuaSnip'
     Plug 'saadparwaiz1/cmp_luasnip'
+
+    " Session management
+    Plug 'folke/persistence.nvim'
 endif
 
 call plug#end()
@@ -170,10 +176,12 @@ nnoremap <Leader>fb :Buffers<CR>
 nnoremap <Leader>fc :Rg<CR>
 nnoremap <Leader>fh :History<CR>
 
-" Buffer navigation
-nnoremap [b :bprevious<CR>
-nnoremap ]b :bnext<CR>
-nnoremap <Leader>bd :bdelete<CR>
+" Buffer navigation (neovim uses bufferline.nvim with <Leader>t shortcuts)
+if !has('nvim')
+    nnoremap [b :bprevious<CR>
+    nnoremap ]b :bnext<CR>
+    nnoremap <Leader>bd :bdelete<CR>
+endif
 
 " Clear search highlight
 nnoremap <Leader>/ :nohlsearch<CR>

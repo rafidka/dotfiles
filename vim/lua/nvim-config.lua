@@ -25,6 +25,7 @@ if plugin_loaded('catppuccin') then
             telescope = { enabled = true },
             which_key = true,
             diffview = true,
+            bufferline = true,
         },
     })
 end
@@ -114,27 +115,78 @@ if plugin_loaded('telescope') then
     })
 
     -- Custom shortcut picker (curated list with descriptions)
+    -- Format: [category] Action description
     local shortcuts = {
-        { key = 'ff',  desc = 'Find files',              cmd = 'Telescope find_files' },
-        { key = 'fg',  desc = 'Git files',               cmd = 'Telescope git_files' },
-        { key = 'fb',  desc = 'Buffers',                 cmd = 'Telescope buffers' },
-        { key = 'fc',  desc = 'Search content (grep)',   cmd = 'Telescope live_grep' },
-        { key = 'fh',  desc = 'File history',            cmd = 'Telescope oldfiles' },
-        { key = 'fs',  desc = 'Document symbols',        cmd = 'Telescope lsp_document_symbols' },
-        { key = 'fd',  desc = 'Diagnostics',             cmd = 'Telescope diagnostics' },
-        { key = 'e',   desc = 'File explorer',           cmd = 'NvimTreeToggle' },
-        { key = 'w',   desc = 'Save',                    cmd = 'w' },
-        { key = 'q',   desc = 'Quit',                    cmd = 'q' },
-        { key = 'x',   desc = 'Save and quit',           cmd = 'x' },
-        { key = 'bd',  desc = 'Delete buffer',           cmd = 'bdelete' },
-        { key = '/',   desc = 'Search in buffer',        cmd = 'Telescope current_buffer_fuzzy_find' },
-        { key = 'gg',  desc = 'LazyGit',                 cmd = 'LazyGit' },
-        { key = 'gd',  desc = 'Diff view',               cmd = 'DiffviewOpen' },
-        { key = 'gh',  desc = 'File git history',        cmd = 'DiffviewFileHistory %' },
-        { key = 'lr',  desc = 'LSP rename',              cmd = 'lua vim.lsp.buf.rename()' },
-        { key = 'la',  desc = 'LSP code action',         cmd = 'lua vim.lsp.buf.code_action()' },
-        { key = 'lf',  desc = 'LSP format',              cmd = 'lua vim.lsp.buf.format()' },
-        { key = 'ap',  desc = 'Autopep8 format',         cmd = 'Autopep8' },
+        -- File/Find
+        { key = 'ff',  desc = '[find] Files in project',           cmd = 'Telescope find_files' },
+        { key = 'fg',  desc = '[find] Git tracked files',          cmd = 'Telescope git_files' },
+        { key = 'fb',  desc = '[find] Open buffers',               cmd = 'Telescope buffers' },
+        { key = 'fc',  desc = '[find] Content in files (grep)',    cmd = 'Telescope live_grep' },
+        { key = 'fh',  desc = '[find] Recently opened files',      cmd = 'Telescope oldfiles' },
+        { key = 'fs',  desc = '[find] Symbols in document',        cmd = 'Telescope lsp_document_symbols' },
+        { key = 'fd',  desc = '[find] Diagnostics (errors/warns)', cmd = 'Telescope diagnostics' },
+        { key = 'fk',  desc = '[find] Keymaps',                    cmd = 'Telescope keymaps' },
+        { key = 'fr',  desc = '[find] Resume last search',         cmd = 'Telescope resume' },
+        { key = 'e',   desc = '[file] Toggle explorer sidebar',    cmd = 'NvimTreeToggle' },
+        -- Search/Replace
+        { key = 'ss',  desc = '[search] Grep in project',          cmd = 'Telescope live_grep' },
+        { key = 'sw',  desc = '[search] Word under cursor',        cmd = 'Telescope grep_string' },
+        { key = 'sb',  desc = '[search] Fuzzy find in buffer',     cmd = 'Telescope current_buffer_fuzzy_find' },
+        { key = 'sr',  desc = '[search] Replace in buffer (:%s/)', cmd = '%s/' },
+        { key = 'sn',  desc = '[search] Clear highlight',          cmd = 'nohlsearch' },
+        -- Code/Refactor
+        { key = 'cf',  desc = '[code] Format buffer',              cmd = 'lua vim.lsp.buf.format()' },
+        { key = 'cr',  desc = '[code] Rename symbol',              cmd = 'lua vim.lsp.buf.rename()' },
+        { key = 'ca',  desc = '[code] Actions menu',               cmd = 'lua vim.lsp.buf.code_action()' },
+        { key = 'cd',  desc = '[code] Show line diagnostics',      cmd = 'lua vim.diagnostic.open_float()' },
+        { key = 'ci',  desc = '[code] Organize imports',           cmd = 'lua vim.lsp.buf.code_action({ apply = true, filter = function(a) return a.title:match("import") end })' },
+        -- Git
+        { key = 'gg',  desc = '[git] Open LazyGit',                cmd = 'LazyGit' },
+        { key = 'gd',  desc = '[git] Diff view (working tree)',    cmd = 'DiffviewOpen' },
+        { key = 'gh',  desc = '[git] File history',                cmd = 'DiffviewFileHistory %' },
+        { key = 'gH',  desc = '[git] Branch history',              cmd = 'DiffviewFileHistory' },
+        { key = 'gf',  desc = '[git] File history (LazyGit)',      cmd = 'LazyGitFilterCurrentFile' },
+        { key = 'gq',  desc = '[git] Close diff view',             cmd = 'DiffviewClose' },
+        -- LSP
+        { key = 'lr',  desc = '[lsp] Rename symbol',               cmd = 'lua vim.lsp.buf.rename()' },
+        { key = 'la',  desc = '[lsp] Code actions',                cmd = 'lua vim.lsp.buf.code_action()' },
+        { key = 'lf',  desc = '[lsp] Format buffer',               cmd = 'lua vim.lsp.buf.format()' },
+        { key = 'ld',  desc = '[lsp] Line diagnostics',            cmd = 'lua vim.diagnostic.open_float()' },
+        -- Tabs (bufferline)
+        { key = 'th',  desc = '[tab] Previous tab',                cmd = 'BufferLineCyclePrev' },
+        { key = 'tn',  desc = '[tab] Next tab',                    cmd = 'BufferLineCycleNext' },
+        { key = 'td',  desc = '[tab] Close current tab',           cmd = 'bprevious | bdelete #' },
+        { key = 'to',  desc = '[tab] Close other tabs',            cmd = 'BufferLineCloseOthers' },
+        { key = 'tl',  desc = '[tab] Close tabs to left',          cmd = 'BufferLineCloseLeft' },
+        { key = 'tr',  desc = '[tab] Close tabs to right',         cmd = 'BufferLineCloseRight' },
+        { key = 'tp',  desc = '[tab] Pin/unpin tab',               cmd = 'BufferLineTogglePin' },
+        { key = 'ts',  desc = '[tab] Pick tab (letter)',           cmd = 'BufferLinePick' },
+        { key = 'tf',  desc = '[tab] Find tab (fuzzy)',            cmd = 'Telescope buffers' },
+        { key = 'tD',  desc = '[tab] Pick tab to close',           cmd = 'BufferLinePickClose' },
+        { key = 't1',  desc = '[tab] Go to tab 1',                 cmd = 'BufferLineGoToBuffer 1' },
+        { key = 't2',  desc = '[tab] Go to tab 2',                 cmd = 'BufferLineGoToBuffer 2' },
+        { key = 't3',  desc = '[tab] Go to tab 3',                 cmd = 'BufferLineGoToBuffer 3' },
+        -- Session
+        { key = 'qs',  desc = '[session] Restore for cwd',         cmd = "lua require('persistence').load()" },
+        { key = 'ql',  desc = '[session] Restore last',            cmd = "lua require('persistence').load({ last = true })" },
+        { key = 'qS',  desc = '[session] Save current',            cmd = "lua require('persistence').save()" },
+        { key = 'qd',  desc = '[session] Disable auto-save',       cmd = "lua require('persistence').stop()" },
+        -- UI Toggles
+        { key = 'un',  desc = '[ui] Toggle line numbers',          cmd = 'set number!' },
+        { key = 'ur',  desc = '[ui] Toggle relative numbers',      cmd = 'set relativenumber!' },
+        { key = 'uw',  desc = '[ui] Toggle word wrap',             cmd = 'set wrap!' },
+        { key = 'us',  desc = '[ui] Toggle spell check',           cmd = 'set spell!' },
+        { key = 'ul',  desc = '[ui] Toggle whitespace chars',      cmd = 'set list!' },
+        { key = 'uc',  desc = '[ui] Toggle cursor line',           cmd = 'set cursorline!' },
+        { key = 'ud',  desc = '[ui] Toggle diagnostics',           cmd = 'lua vim.diagnostic.enable(not vim.diagnostic.is_enabled())' },
+        { key = 'ut',  desc = '[ui] Toggle treesitter highlight',  cmd = 'lua if vim.b.ts_highlight then vim.treesitter.stop() else vim.treesitter.start() end; vim.b.ts_highlight = not vim.b.ts_highlight' },
+        -- Buffer/Search
+        { key = '/',   desc = '[search] Fuzzy search in buffer',   cmd = 'Telescope current_buffer_fuzzy_find' },
+        -- Quick actions
+        { key = 'w',   desc = '[quick] Save file',                 cmd = 'w' },
+        { key = 'q',   desc = '[quick] Quit window',               cmd = 'q' },
+        { key = 'x',   desc = '[quick] Save and quit',             cmd = 'x' },
+        { key = 'ap',  desc = '[python] Autopep8 format',          cmd = 'Autopep8' },
     }
 
     local function shortcut_picker()
@@ -178,6 +230,21 @@ if plugin_loaded('telescope') then
     vim.keymap.set('n', '<Leader>fd', builtin.diagnostics, { desc = 'Diagnostics' })
     vim.keymap.set('n', '<Leader>fk', builtin.keymaps, { desc = 'All keymaps' })
 
+    -- Search/Replace shortcuts (<Leader>s)
+    vim.keymap.set('n', '<Leader>sr', ':%s/', { desc = 'Search & replace' })
+    vim.keymap.set('n', '<Leader>sR', ':%s/<C-r><C-w>/', { desc = 'Replace word under cursor' })
+    vim.keymap.set('n', '<Leader>sw', builtin.grep_string, { desc = 'Search word under cursor' })
+    vim.keymap.set('n', '<Leader>ss', builtin.live_grep, { desc = 'Search in project' })
+    vim.keymap.set('v', '<Leader>ss', function()
+        -- Get visual selection
+        vim.cmd('noau normal! "vy"')
+        local text = vim.fn.getreg('v')
+        text = string.gsub(text, '\n', '')
+        builtin.grep_string({ search = text })
+    end, { desc = 'Search selection' })
+    vim.keymap.set('n', '<Leader>sn', ':nohlsearch<CR>', { silent = true, desc = 'Clear search highlight' })
+    vim.keymap.set('n', '<Leader>sb', builtin.current_buffer_fuzzy_find, { desc = 'Search in buffer' })
+
     -- Quick access (double leader) - curated shortcut picker
     vim.keymap.set('n', '<Leader><Leader>', shortcut_picker, { desc = 'Shortcuts' })
 end
@@ -220,10 +287,14 @@ if plugin_loaded('which-key') then
     -- Register key groups
     wk.add({
         { '<Leader>f', group = 'file/find' },
-        { '<Leader>b', group = 'buffer' },
+        { '<Leader>t', group = 'tabs' },
         { '<Leader>l', group = 'lsp' },
         { '<Leader>g', group = 'git' },
         { '<Leader>a', group = 'actions' },
+        { '<Leader>s', group = 'search' },
+        { '<Leader>c', group = 'code' },
+        { '<Leader>u', group = 'ui' },
+        { '<Leader>q', group = 'session/quit' },
     })
 end
 
@@ -247,6 +318,182 @@ if plugin_loaded('diffview') then
     vim.keymap.set('n', '<Leader>gh', ':DiffviewFileHistory %<CR>', { silent = true, desc = 'File history' })
     vim.keymap.set('n', '<Leader>gH', ':DiffviewFileHistory<CR>', { silent = true, desc = 'Branch history' })
     vim.keymap.set('n', '<Leader>gq', ':DiffviewClose<CR>', { silent = true, desc = 'Close diff view' })
+end
+
+--------------------------------------------------------------------------------
+-- Code/Refactor Shortcuts (<Leader>c)
+--------------------------------------------------------------------------------
+-- These provide convenient aliases for common code actions
+-- (Some overlap with <Leader>l LSP shortcuts intentionally for discoverability)
+
+vim.keymap.set('n', '<Leader>cf', function()
+    vim.lsp.buf.format({ async = true })
+end, { desc = 'Format buffer' })
+vim.keymap.set('n', '<Leader>cr', vim.lsp.buf.rename, { desc = 'Rename symbol' })
+vim.keymap.set('n', '<Leader>ca', vim.lsp.buf.code_action, { desc = 'Code action' })
+vim.keymap.set('v', '<Leader>ca', vim.lsp.buf.code_action, { desc = 'Code action (visual)' })
+vim.keymap.set('n', '<Leader>cd', vim.diagnostic.open_float, { desc = 'Line diagnostics' })
+vim.keymap.set('n', '<Leader>ci', function()
+    -- Organize imports (works with pyright and ts_ls)
+    vim.lsp.buf.code_action({
+        apply = true,
+        filter = function(action)
+            return action.title:match('import') or action.title:match('Import')
+        end,
+    })
+end, { desc = 'Organize imports' })
+
+--------------------------------------------------------------------------------
+-- Bufferline (Tab Bar)
+--------------------------------------------------------------------------------
+if plugin_loaded('bufferline') then
+    require('bufferline').setup({
+        options = {
+            mode = 'buffers',
+            style_preset = require('bufferline').style_preset.default,
+            numbers = 'ordinal',  -- Show buffer numbers for <Leader>t1-9
+            close_command = 'bdelete! %d',
+            right_mouse_command = 'bdelete! %d',
+            left_mouse_command = 'buffer %d',
+            middle_mouse_command = 'bdelete! %d',
+            indicator = {
+                icon = '▎',
+                style = 'icon',
+            },
+            buffer_close_icon = '󰅖',
+            modified_icon = '●',
+            close_icon = '',
+            left_trunc_marker = '',
+            right_trunc_marker = '',
+            max_name_length = 30,
+            max_prefix_length = 15,
+            truncate_names = true,
+            tab_size = 18,
+            diagnostics = 'nvim_lsp',
+            diagnostics_update_in_insert = false,
+            diagnostics_indicator = function(count, level)
+                local icon = level:match('error') and ' ' or ' '
+                return ' ' .. icon .. count
+            end,
+            offsets = {
+                {
+                    filetype = 'NvimTree',
+                    text = 'File Explorer',
+                    text_align = 'center',
+                    separator = true,
+                },
+            },
+            color_icons = true,
+            show_buffer_icons = true,
+            show_buffer_close_icons = true,
+            show_close_icon = false,
+            show_tab_indicators = true,
+            show_duplicate_prefix = true,
+            separator_style = 'slant',
+            enforce_regular_tabs = false,
+            always_show_bufferline = true,
+            hover = {
+                enabled = true,
+                delay = 200,
+                reveal = { 'close' },
+            },
+            sort_by = 'insert_at_end',
+        },
+        -- Use catppuccin highlights if available
+        highlights = (function()
+            local ok, catppuccin = pcall(require, 'catppuccin.groups.integrations.bufferline')
+            if ok then
+                return catppuccin.get()
+            end
+            return {}
+        end)(),
+    })
+
+    -- Tab navigation shortcuts (<Leader>t)
+    vim.keymap.set('n', '<Leader>th', ':BufferLineCyclePrev<CR>', { silent = true, desc = 'Previous tab' })
+    vim.keymap.set('n', '<Leader>tn', ':BufferLineCycleNext<CR>', { silent = true, desc = 'Next tab' })
+    vim.keymap.set('n', '<Leader>td', ':bprevious<CR>:bdelete #<CR>', { silent = true, desc = 'Close tab' })
+    vim.keymap.set('n', '<Leader>to', ':BufferLineCloseOthers<CR>', { silent = true, desc = 'Close other tabs' })
+    vim.keymap.set('n', '<Leader>tl', ':BufferLineCloseLeft<CR>', { silent = true, desc = 'Close tabs to the left' })
+    vim.keymap.set('n', '<Leader>tr', ':BufferLineCloseRight<CR>', { silent = true, desc = 'Close tabs to the right' })
+    vim.keymap.set('n', '<Leader>tp', ':BufferLineTogglePin<CR>', { silent = true, desc = 'Pin/unpin tab' })
+    vim.keymap.set('n', '<Leader>ts', ':BufferLinePick<CR>', { silent = true, desc = 'Pick tab' })
+    vim.keymap.set('n', '<Leader>tD', ':BufferLinePickClose<CR>', { silent = true, desc = 'Pick tab to close' })
+    vim.keymap.set('n', '<Leader>tf', ':Telescope buffers<CR>', { silent = true, desc = 'Find tab' })
+
+    -- Jump to tab by number
+    vim.keymap.set('n', '<Leader>t1', ':BufferLineGoToBuffer 1<CR>', { silent = true, desc = 'Go to tab 1' })
+    vim.keymap.set('n', '<Leader>t2', ':BufferLineGoToBuffer 2<CR>', { silent = true, desc = 'Go to tab 2' })
+    vim.keymap.set('n', '<Leader>t3', ':BufferLineGoToBuffer 3<CR>', { silent = true, desc = 'Go to tab 3' })
+    vim.keymap.set('n', '<Leader>t4', ':BufferLineGoToBuffer 4<CR>', { silent = true, desc = 'Go to tab 4' })
+    vim.keymap.set('n', '<Leader>t5', ':BufferLineGoToBuffer 5<CR>', { silent = true, desc = 'Go to tab 5' })
+    vim.keymap.set('n', '<Leader>t6', ':BufferLineGoToBuffer 6<CR>', { silent = true, desc = 'Go to tab 6' })
+    vim.keymap.set('n', '<Leader>t7', ':BufferLineGoToBuffer 7<CR>', { silent = true, desc = 'Go to tab 7' })
+    vim.keymap.set('n', '<Leader>t8', ':BufferLineGoToBuffer 8<CR>', { silent = true, desc = 'Go to tab 8' })
+    vim.keymap.set('n', '<Leader>t9', ':BufferLineGoToBuffer 9<CR>', { silent = true, desc = 'Go to tab 9' })
+end
+
+--------------------------------------------------------------------------------
+-- UI Toggle Shortcuts (<Leader>u)
+--------------------------------------------------------------------------------
+local function toggle_option(opt)
+    return function()
+        vim.o[opt] = not vim.o[opt]
+        vim.notify(opt .. ': ' .. tostring(vim.o[opt]), vim.log.levels.INFO)
+    end
+end
+
+vim.keymap.set('n', '<Leader>un', toggle_option('number'), { desc = 'Toggle line numbers' })
+vim.keymap.set('n', '<Leader>ur', toggle_option('relativenumber'), { desc = 'Toggle relative numbers' })
+vim.keymap.set('n', '<Leader>uw', toggle_option('wrap'), { desc = 'Toggle word wrap' })
+vim.keymap.set('n', '<Leader>us', toggle_option('spell'), { desc = 'Toggle spell check' })
+vim.keymap.set('n', '<Leader>ul', toggle_option('list'), { desc = 'Toggle list chars' })
+vim.keymap.set('n', '<Leader>uc', toggle_option('cursorline'), { desc = 'Toggle cursor line' })
+
+vim.keymap.set('n', '<Leader>ud', function()
+    local enabled = vim.diagnostic.is_enabled()
+    vim.diagnostic.enable(not enabled)
+    vim.notify('Diagnostics: ' .. tostring(not enabled), vim.log.levels.INFO)
+end, { desc = 'Toggle diagnostics' })
+
+vim.keymap.set('n', '<Leader>ut', function()
+    if vim.b.ts_highlight then
+        vim.treesitter.stop()
+        vim.b.ts_highlight = false
+        vim.notify('Treesitter highlighting: off', vim.log.levels.INFO)
+    else
+        vim.treesitter.start()
+        vim.b.ts_highlight = true
+        vim.notify('Treesitter highlighting: on', vim.log.levels.INFO)
+    end
+end, { desc = 'Toggle treesitter highlight' })
+
+--------------------------------------------------------------------------------
+-- Session Management (persistence.nvim)
+--------------------------------------------------------------------------------
+if plugin_loaded('persistence') then
+    require('persistence').setup({
+        dir = vim.fn.stdpath('state') .. '/sessions/',
+        options = { 'buffers', 'curdir', 'tabpages', 'winsize' },
+    })
+
+    vim.keymap.set('n', '<Leader>qs', function()
+        require('persistence').load()
+    end, { desc = 'Restore session (cwd)' })
+
+    vim.keymap.set('n', '<Leader>ql', function()
+        require('persistence').load({ last = true })
+    end, { desc = 'Restore last session' })
+
+    vim.keymap.set('n', '<Leader>qd', function()
+        require('persistence').stop()
+        vim.notify('Session auto-save disabled', vim.log.levels.INFO)
+    end, { desc = "Don't save session" })
+
+    vim.keymap.set('n', '<Leader>qS', function()
+        require('persistence').save()
+        vim.notify('Session saved', vim.log.levels.INFO)
+    end, { desc = 'Save session' })
 end
 
 --------------------------------------------------------------------------------
