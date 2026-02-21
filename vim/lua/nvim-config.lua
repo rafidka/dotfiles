@@ -22,6 +22,9 @@ if plugin_loaded('catppuccin') then
             cmp = true,
             gitsigns = true,
             nvimtree = true,
+            telescope = { enabled = true },
+            which_key = true,
+            diffview = true,
         },
     })
 end
@@ -70,6 +73,180 @@ if plugin_loaded('nvim-tree') then
     -- Keymaps
     vim.keymap.set('n', '<Leader>e', ':NvimTreeToggle<CR>', { silent = true, desc = 'Toggle file explorer' })
     vim.keymap.set('n', '<Leader>fe', ':NvimTreeToggle<CR>', { silent = true, desc = 'Toggle file explorer' })
+end
+
+--------------------------------------------------------------------------------
+-- Telescope (Fuzzy Finder)
+--------------------------------------------------------------------------------
+if plugin_loaded('telescope') then
+    local telescope = require('telescope')
+    local builtin = require('telescope.builtin')
+    local pickers = require('telescope.pickers')
+    local finders = require('telescope.finders')
+    local conf = require('telescope.config').values
+    local actions = require('telescope.actions')
+    local action_state = require('telescope.actions.state')
+
+    telescope.setup({
+        defaults = {
+            prompt_prefix = '   ',
+            selection_caret = '  ',
+            layout_strategy = 'horizontal',
+            layout_config = {
+                horizontal = {
+                    preview_width = 0.55,
+                },
+            },
+            mappings = {
+                i = {
+                    ['<C-j>'] = 'move_selection_next',
+                    ['<C-k>'] = 'move_selection_previous',
+                    ['<Esc>'] = 'close',
+                },
+            },
+        },
+        pickers = {
+            find_files = {
+                hidden = true,
+                file_ignore_patterns = { '.git/', 'node_modules/', '.venv/', '__pycache__/' },
+            },
+        },
+    })
+
+    -- Custom shortcut picker (curated list with descriptions)
+    local shortcuts = {
+        { key = 'ff',  desc = 'Find files',              cmd = 'Telescope find_files' },
+        { key = 'fg',  desc = 'Git files',               cmd = 'Telescope git_files' },
+        { key = 'fb',  desc = 'Buffers',                 cmd = 'Telescope buffers' },
+        { key = 'fc',  desc = 'Search content (grep)',   cmd = 'Telescope live_grep' },
+        { key = 'fh',  desc = 'File history',            cmd = 'Telescope oldfiles' },
+        { key = 'fs',  desc = 'Document symbols',        cmd = 'Telescope lsp_document_symbols' },
+        { key = 'fd',  desc = 'Diagnostics',             cmd = 'Telescope diagnostics' },
+        { key = 'e',   desc = 'File explorer',           cmd = 'NvimTreeToggle' },
+        { key = 'w',   desc = 'Save',                    cmd = 'w' },
+        { key = 'q',   desc = 'Quit',                    cmd = 'q' },
+        { key = 'x',   desc = 'Save and quit',           cmd = 'x' },
+        { key = 'bd',  desc = 'Delete buffer',           cmd = 'bdelete' },
+        { key = '/',   desc = 'Search in buffer',        cmd = 'Telescope current_buffer_fuzzy_find' },
+        { key = 'gg',  desc = 'LazyGit',                 cmd = 'LazyGit' },
+        { key = 'gd',  desc = 'Diff view',               cmd = 'DiffviewOpen' },
+        { key = 'gh',  desc = 'File git history',        cmd = 'DiffviewFileHistory %' },
+        { key = 'lr',  desc = 'LSP rename',              cmd = 'lua vim.lsp.buf.rename()' },
+        { key = 'la',  desc = 'LSP code action',         cmd = 'lua vim.lsp.buf.code_action()' },
+        { key = 'lf',  desc = 'LSP format',              cmd = 'lua vim.lsp.buf.format()' },
+        { key = 'ap',  desc = 'Autopep8 format',         cmd = 'Autopep8' },
+    }
+
+    local function shortcut_picker()
+        pickers.new({}, {
+            prompt_title = 'Shortcuts',
+            finder = finders.new_table({
+                results = shortcuts,
+                entry_maker = function(entry)
+                    return {
+                        value = entry,
+                        display = string.format('%-6s  %s', entry.key, entry.desc),
+                        ordinal = entry.key .. ' ' .. entry.desc,
+                    }
+                end,
+            }),
+            sorter = conf.generic_sorter({}),
+            attach_mappings = function(prompt_bufnr, map)
+                actions.select_default:replace(function()
+                    actions.close(prompt_bufnr)
+                    local selection = action_state.get_selected_entry()
+                    if selection then
+                        vim.cmd(selection.value.cmd)
+                    end
+                end)
+                return true
+            end,
+        }):find()
+    end
+
+    -- Keymaps (matching fzf.vim style)
+    vim.keymap.set('n', '<Leader>ff', builtin.find_files, { desc = 'Find files' })
+    vim.keymap.set('n', '<Leader>fg', builtin.git_files, { desc = 'Git files' })
+    vim.keymap.set('n', '<Leader>fb', builtin.buffers, { desc = 'Buffers' })
+    vim.keymap.set('n', '<Leader>fc', builtin.live_grep, { desc = 'Search content (grep)' })
+    vim.keymap.set('n', '<Leader>fh', builtin.oldfiles, { desc = 'File history' })
+    vim.keymap.set('n', '<Leader>fs', builtin.lsp_document_symbols, { desc = 'Document symbols' })
+    vim.keymap.set('n', '<Leader>fr', builtin.resume, { desc = 'Resume last search' })
+    vim.keymap.set('n', '<Leader>/', builtin.current_buffer_fuzzy_find, { desc = 'Search in buffer' })
+
+    -- Additional useful pickers
+    vim.keymap.set('n', '<Leader>fd', builtin.diagnostics, { desc = 'Diagnostics' })
+    vim.keymap.set('n', '<Leader>fk', builtin.keymaps, { desc = 'All keymaps' })
+
+    -- Quick access (double leader) - curated shortcut picker
+    vim.keymap.set('n', '<Leader><Leader>', shortcut_picker, { desc = 'Shortcuts' })
+end
+
+--------------------------------------------------------------------------------
+-- Lualine (Statusline)
+--------------------------------------------------------------------------------
+if plugin_loaded('lualine') then
+    require('lualine').setup({
+        options = {
+            theme = 'catppuccin',
+            component_separators = { left = '', right = '' },
+            section_separators = { left = '', right = '' },
+        },
+        sections = {
+            lualine_a = { 'mode' },
+            lualine_b = { 'branch', 'diff', 'diagnostics' },
+            lualine_c = { { 'filename', path = 1 } },  -- Relative path
+            lualine_x = { 'encoding', 'fileformat', 'filetype' },
+            lualine_y = { 'progress' },
+            lualine_z = { 'location' },
+        },
+        extensions = { 'nvim-tree' },
+    })
+end
+
+--------------------------------------------------------------------------------
+-- Which-Key (Keybinding Helper)
+--------------------------------------------------------------------------------
+if plugin_loaded('which-key') then
+    local wk = require('which-key')
+
+    wk.setup({
+        delay = 500,
+        icons = {
+            mappings = false,
+        },
+    })
+
+    -- Register key groups
+    wk.add({
+        { '<Leader>f', group = 'file/find' },
+        { '<Leader>b', group = 'buffer' },
+        { '<Leader>l', group = 'lsp' },
+        { '<Leader>g', group = 'git' },
+        { '<Leader>a', group = 'actions' },
+    })
+end
+
+--------------------------------------------------------------------------------
+-- Lazygit
+--------------------------------------------------------------------------------
+if plugin_loaded('lazygit') then
+    vim.keymap.set('n', '<Leader>gg', ':LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
+    vim.keymap.set('n', '<Leader>gf', ':LazyGitFilterCurrentFile<CR>', { silent = true, desc = 'LazyGit file history' })
+end
+
+--------------------------------------------------------------------------------
+-- Diffview
+--------------------------------------------------------------------------------
+if plugin_loaded('diffview') then
+    require('diffview').setup({
+        use_icons = true,
+    })
+
+    vim.keymap.set('n', '<Leader>gd', ':DiffviewOpen<CR>', { silent = true, desc = 'Open diff view' })
+    vim.keymap.set('n', '<Leader>gh', ':DiffviewFileHistory %<CR>', { silent = true, desc = 'File history' })
+    vim.keymap.set('n', '<Leader>gH', ':DiffviewFileHistory<CR>', { silent = true, desc = 'Branch history' })
+    vim.keymap.set('n', '<Leader>gq', ':DiffviewClose<CR>', { silent = true, desc = 'Close diff view' })
 end
 
 --------------------------------------------------------------------------------
@@ -295,14 +472,4 @@ if plugin_loaded('cmp') then
     })
 end
 
---------------------------------------------------------------------------------
--- Update which-key for LSP mappings (if available)
---------------------------------------------------------------------------------
-vim.g.which_key_map = vim.g.which_key_map or {}
-vim.g.which_key_map.l = {
-    name = '+lsp',
-    r = 'rename',
-    a = 'code action',
-    f = 'format',
-    d = 'diagnostics',
-}
+

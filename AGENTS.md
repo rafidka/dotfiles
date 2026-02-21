@@ -216,13 +216,13 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 ### Vim Plugins
 
 - **vim-code-dark** - VSCode-like colorscheme
-- **vim-airline** - Status line
-- **fzf.vim** - Fuzzy finder integration
+- **vim-airline** - Status line (vim-only)
+- **fzf.vim** - Fuzzy finder integration (vim-only)
 - **python-syntax** - Enhanced Python highlighting
 - **vim-commentary**, **vim-surround**, **vim-fugitive** - Utilities
 - **vim-autopep8** - Python formatting
 - **vim-gitgutter** - Git diff in gutter
-- **vim-which-key** - Shows available keybindings popup
+- **vim-which-key** - Shows available keybindings popup (vim-only)
 
 **Neovim-only plugins:**
 - **nvim-tree** - File explorer sidebar
@@ -231,13 +231,18 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 - **nvim-lspconfig** - LSP configuration
 - **nvim-cmp** - Autocompletion (with buffer, path, cmdline sources)
 - **LuaSnip** - Snippet engine
+- **telescope.nvim** - Fuzzy finder (replaces fzf.vim)
+- **lualine.nvim** - Statusline (replaces vim-airline)
+- **which-key.nvim** - Keybinding helper (replaces vim-which-key)
+- **lazygit.nvim** - LazyGit integration
+- **diffview.nvim** - Git diff viewer
 
 ### Vim Key Mappings (Leader = Space)
 
 | Mapping | Action |
 |---------|--------|
 | `<Space>` | Show which-key popup (wait 500ms) |
-| `<Space><Space>` | FZF shortcut picker |
+| `<Space><Space>` | Shortcut picker (FZF in vim, Telescope in neovim) |
 | `<Space>ff` | Find files |
 | `<Space>fc` | Find in files (ripgrep) |
 | `<Space>fb` | List buffers |
@@ -245,7 +250,7 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 | `<Space>fh` | File history |
 | `<Space>fe` | File explorer (neovim) |
 | `<Space>e` | File explorer (neovim) |
-| `<Space>/` | Clear search highlight |
+| `<Space>/` | Clear highlight (vim) / Search in buffer (neovim) |
 | `<Space>y` | Yank to system clipboard |
 | `<Space>p` | Paste from system clipboard |
 | `<Space>ap` | Run autopep8 |
@@ -257,6 +262,9 @@ Used for: `ls` colors, `ps` syntax, clipboard commands.
 | `<Space>la` | LSP code action (neovim) |
 | `<Space>lf` | LSP format (neovim) |
 | `[d` / `]d` | Previous/next diagnostic (neovim) |
+| `<Space>gg` | Open LazyGit (neovim) |
+| `<Space>gd` | Open diff view (neovim) |
+| `<Space>gh` | File git history (neovim) |
 
 ### Shell Functions
 
