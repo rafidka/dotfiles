@@ -1,0 +1,226 @@
+#!/bin/bash
+
+set -euo pipefail
+
+HOSTS_FILE="/etc/hosts"
+MARKER_START="# Blocklist Start"
+MARKER_END="# Blocklist End"
+
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") COMMAND [DOMAIN]
+
+Manage website blocking via /etc/hosts to help you stay focused.
+Requires sudo for block/unblock operations.
+
+COMMANDS:
+    block <domain>      Block a domain (also blocks www. variant)
+    unblock <domain>    Unblock a domain (also removes www. variant)
+    list                List all currently blocked domains
+    status [domain]     Check if a domain (or all domains) are blocked
+
+OPTIONS:
+    -h, --help          Show this help message and exit
+
+EXAMPLES:
+    $(basename "$0") block youtube.com
+    $(basename "$0") unblock youtube.com
+    $(basename "$0") list
+    $(basename "$0") status youtube.com
+
+NOTES:
+    - Automatically blocks both 'domain' and 'www.domain'
+    - Flushes DNS cache after changes so they take effect immediately
+    - Entries are stored between '# Blocklist Start/End' markers in /etc/hosts
+
+EOF
+    exit 0
+}
+
+# Flush macOS DNS cache
+flush_dns() {
+    sudo dscacheutil -flushcache
+    sudo killall -HUP mDNSResponder 2>/dev/null || true
+    echo "DNS cache flushed."
+}
+
+# Ensure blocklist markers exist in /etc/hosts
+ensure_markers() {
+    if ! grep -q "^${MARKER_START}$" "$HOSTS_FILE" 2>/dev/null; then
+        sudo sh -c "printf '\n%s\n%s\n' '${MARKER_START}' '${MARKER_END}' >> '${HOSTS_FILE}'"
+    fi
+}
+
+# Normalize domain: strip protocol, trailing slash, www. prefix
+normalize_domain() {
+    local domain="$1"
+    domain="${domain#http://}"
+    domain="${domain#https://}"
+    domain="${domain%%/*}"
+    domain="${domain#www.}"
+    echo "$domain"
+}
+
+# Check if a domain is currently blocked
+is_blocked() {
+    local domain="$1"
+    grep -q "^0\.0\.0\.0 ${domain}$" "$HOSTS_FILE" 2>/dev/null
+}
+
+# Get all blocked domains (unique, without www. duplicates)
+get_blocked_domains() {
+    if [[ ! -f "$HOSTS_FILE" ]]; then
+        return
+    fi
+    local in_block=false
+    while IFS= read -r line; do
+        if [[ "$line" == "$MARKER_START" ]]; then
+            in_block=true
+            continue
+        fi
+        if [[ "$line" == "$MARKER_END" ]]; then
+            in_block=false
+            continue
+        fi
+        if $in_block && [[ "$line" =~ ^0\.0\.0\.0[[:space:]]+(.*) ]]; then
+            local entry="${BASH_REMATCH[1]}"
+            # Skip www. variants to avoid duplicate display
+            if [[ "$entry" != www.* ]]; then
+                echo "$entry"
+            fi
+        fi
+    done < "$HOSTS_FILE"
+}
+
+cmd_block() {
+    local raw_domain="${1:-}"
+    if [[ -z "$raw_domain" ]]; then
+        echo "Error: domain required. Usage: $(basename "$0") block <domain>" >&2
+        exit 1
+    fi
+
+    local domain
+    domain="$(normalize_domain "$raw_domain")"
+
+    if is_blocked "$domain"; then
+        echo "Already blocked: $domain"
+        exit 0
+    fi
+
+    ensure_markers
+
+    # Insert block entries before the end marker using a temp file
+    # (BSD sed on macOS doesn't support \n in replacement strings)
+    local tmpfile
+    tmpfile="$(mktemp)"
+    while IFS= read -r line; do
+        if [[ "$line" == "$MARKER_END" ]]; then
+            printf '0.0.0.0 %s\n' "$domain"
+            printf ':: %s\n' "$domain"
+            printf '0.0.0.0 www.%s\n' "$domain"
+            printf ':: www.%s\n' "$domain"
+        fi
+        printf '%s\n' "$line"
+    done < "$HOSTS_FILE" > "$tmpfile"
+    sudo cp "$tmpfile" "$HOSTS_FILE"
+    rm -f "$tmpfile"
+
+    flush_dns
+    echo "Blocked: $domain (and www.$domain)"
+}
+
+cmd_unblock() {
+    local raw_domain="${1:-}"
+    if [[ -z "$raw_domain" ]]; then
+        echo "Error: domain required. Usage: $(basename "$0") unblock <domain>" >&2
+        exit 1
+    fi
+
+    local domain
+    domain="$(normalize_domain "$raw_domain")"
+
+    if ! is_blocked "$domain"; then
+        echo "Not blocked: $domain"
+        exit 0
+    fi
+
+    # Remove all 4 lines (0.0.0.0 and :: for domain and www.domain)
+    sudo sed -i '' \
+        -e "/^0\.0\.0\.0 ${domain}$/d" \
+        -e "/^:: ${domain}$/d" \
+        -e "/^0\.0\.0\.0 www\.${domain}$/d" \
+        -e "/^:: www\.${domain}$/d" \
+        "$HOSTS_FILE"
+
+    flush_dns
+    echo "Unblocked: $domain (and www.$domain)"
+}
+
+cmd_list() {
+    local domains
+    domains="$(get_blocked_domains)"
+
+    if [[ -z "$domains" ]]; then
+        echo "No sites currently blocked."
+        return
+    fi
+
+    echo "Blocked sites:"
+    echo "$domains" | while IFS= read -r domain; do
+        echo "  $domain"
+    done
+}
+
+cmd_status() {
+    local raw_domain="${1:-}"
+
+    if [[ -z "$raw_domain" ]]; then
+        # Show overall status
+        local count
+        count="$(get_blocked_domains | grep -c . || true)"
+        if [[ "$count" -eq 0 ]]; then
+            echo "No sites currently blocked."
+        else
+            echo "$count site(s) currently blocked."
+            cmd_list
+        fi
+        return
+    fi
+
+    local domain
+    domain="$(normalize_domain "$raw_domain")"
+
+    if is_blocked "$domain"; then
+        echo "Blocked: $domain"
+    else
+        echo "Not blocked: $domain"
+    fi
+}
+
+# Parse arguments
+if [[ $# -eq 0 ]]; then
+    show_help
+fi
+
+case "${1:-}" in
+    -h|--help)
+        show_help
+        ;;
+    block)
+        cmd_block "${2:-}"
+        ;;
+    unblock)
+        cmd_unblock "${2:-}"
+        ;;
+    list)
+        cmd_list
+        ;;
+    status)
+        cmd_status "${2:-}"
+        ;;
+    *)
+        echo "Error: unknown command '${1}'" >&2
+        echo "Run '$(basename "$0") --help' for usage." >&2
+        exit 1
+        ;;
+esac
