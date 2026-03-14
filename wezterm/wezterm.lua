@@ -35,7 +35,7 @@ config.harfbuzz_features = { "calt=1", "clig=1", "liga=1" }
 -- ---------------------------------------------------------------------------
 -- Cursor
 -- ---------------------------------------------------------------------------
-config.default_cursor_style = "SteadyBar"
+config.default_cursor_style = "SteadyBlock"
 
 -- ---------------------------------------------------------------------------
 -- Window Appearance
