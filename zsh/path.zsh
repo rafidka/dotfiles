@@ -39,3 +39,4 @@ fi
 
 # Vim configuration - use VIMINIT to source our vimrc without symlinks
 export VIMINIT="source ${DOTFILES}/vim/vimrc"
+

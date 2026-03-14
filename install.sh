@@ -15,16 +15,16 @@ echo ""
 
 # --- Oh-My-Zsh Installation ---
 if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
-    echo "[1/4] Installing Oh-My-Zsh..."
+    echo "[1/5] Installing Oh-My-Zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
 else
-    echo "[1/4] Oh-My-Zsh already installed, skipping..."
+    echo "[1/5] Oh-My-Zsh already installed, skipping..."
 fi
 
 # --- Zsh Plugin Installation ---
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
-echo "[2/4] Installing Zsh plugins..."
+echo "[2/5] Installing Zsh plugins..."
 
 # zsh-syntax-highlighting
 if [[ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]]; then
@@ -67,7 +67,7 @@ else
 fi
 
 # --- FZF Installation ---
-echo "[3/4] Installing FZF..."
+echo "[3/5] Installing FZF..."
 if [[ ! -d "$HOME/.fzf" ]]; then
     git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"
     "$HOME/.fzf/install" --key-bindings --completion --no-update-rc --no-bash --no-fish
@@ -75,8 +75,29 @@ else
     echo "  - FZF already installed"
 fi
 
+# --- WezTerm Configuration ---
+echo "[4/5] Configuring WezTerm..."
+WEZTERM_CONFIG="$HOME/.wezterm.lua"
+WEZTERM_WRAPPER='-- ~/.wezterm.lua - Thin wrapper that delegates to dotfiles config
+-- All real configuration lives in ~/dotfiles/wezterm/wezterm.lua
+return dofile(os.getenv("HOME") .. "/dotfiles/wezterm/wezterm.lua")'
+
+if [[ -f "$WEZTERM_CONFIG" ]]; then
+    if grep -q "dotfiles/wezterm/wezterm.lua" "$WEZTERM_CONFIG" 2>/dev/null; then
+        echo "  - WezTerm wrapper already configured"
+    else
+        echo "  - Backing up existing ~/.wezterm.lua to ~/.wezterm.lua.bak"
+        cp "$WEZTERM_CONFIG" "${WEZTERM_CONFIG}.bak"
+        echo "$WEZTERM_WRAPPER" > "$WEZTERM_CONFIG"
+        echo "  - Created WezTerm wrapper (old config backed up)"
+    fi
+else
+    echo "$WEZTERM_WRAPPER" > "$WEZTERM_CONFIG"
+    echo "  - Created WezTerm wrapper at ~/.wezterm.lua"
+fi
+
 # --- Add activation to .zshrc ---
-echo "[4/4] Configuring .zshrc..."
+echo "[5/5] Configuring .zshrc..."
 ZSHRC="$HOME/.zshrc"
 ACTIVATION_LINE="source ~/dotfiles/activate.sh"
 
@@ -128,5 +149,6 @@ if [[ -n "$MISSING_TOOLS" ]]; then
 fi
 echo ""
 echo "Note: Vim configuration uses VIMINIT environment variable."
+echo "      WezTerm configuration uses a thin wrapper at ~/.wezterm.lua."
 echo "      No symlinks are needed - everything is self-contained in ~/dotfiles."
 echo ""
