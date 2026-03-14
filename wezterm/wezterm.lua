@@ -64,9 +64,32 @@ config.scrollback_lines = 100000
 -- ---------------------------------------------------------------------------
 -- Tab Bar
 -- ---------------------------------------------------------------------------
-config.use_fancy_tab_bar = false
+config.use_fancy_tab_bar = true
 config.tab_bar_at_bottom = false
 config.hide_tab_bar_if_only_one_tab = false
+config.show_new_tab_button_in_tab_bar = false
+config.window_frame = {
+	font = wezterm.font({ family = "MesloLGS NF", weight = "Bold" }),
+	font_size = IS_MAC and 12.0 or 9.0,
+	active_titlebar_bg = "#1a1a1a",
+	inactive_titlebar_bg = "#1a1a1a",
+}
+config.colors = {
+	tab_bar = {
+		active_tab = {
+			bg_color = "#0040a0",
+			fg_color = "#ffffff",
+		},
+		inactive_tab = {
+			bg_color = "#1a1a1a",
+			fg_color = "#808080",
+		},
+		inactive_tab_hover = {
+			bg_color = "#333333",
+			fg_color = "#c0c0c0",
+		},
+	},
+}
 
 -- ---------------------------------------------------------------------------
 -- Performance
@@ -178,13 +201,6 @@ local function clamp(s, n)
 	return (#s > n) and s:sub(1, n) or s
 end
 
-local SEPARATOR = "\u{2502}" -- thin vertical line: │
-local TAB_BG = "#333333"
-local TAB_FG = "#808080"
-local ACTIVE_BG = "#0040a0"
-local ACTIVE_FG = "#c0c0c0"
-local SEP_FG = "#555555"
-
 wezterm.on("format-tab-title", function(tab)
 	local title = get_title(tab)
 
@@ -196,19 +212,7 @@ wezterm.on("format-tab-title", function(tab)
 
 	local index = tab.tab_index + 1
 	local short = clamp(title, MAX_TITLE_LEN)
-	local label = "  " .. index .. ": " .. short .. "  "
-
-	local bg = tab.is_active and ACTIVE_BG or TAB_BG
-	local fg = tab.is_active and ACTIVE_FG or TAB_FG
-
-	return {
-		{ Background = { Color = bg } },
-		{ Foreground = { Color = fg } },
-		{ Text = label },
-		{ Background = { Color = "none" } },
-		{ Foreground = { Color = SEP_FG } },
-		{ Text = SEPARATOR },
-	}
+	return "  " .. index .. ": " .. short .. "  "
 end)
 
 -- ---------------------------------------------------------------------------
