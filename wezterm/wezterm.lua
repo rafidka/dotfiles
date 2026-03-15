@@ -151,6 +151,16 @@ config.keys = collect(
 	-- New tab
 	key("t", "CMD", "ALT", act.SpawnTab("CurrentPaneDomain")),
 
+	-- Rename tab
+	key("r", "CMD", "ALT", act.PromptInputLine({
+		description = "Tab name:",
+		action = wezterm.action_callback(function(window, _, line)
+			if line then
+				window:active_tab():set_title(line)
+			end
+		end),
+	})),
+
 	-- Close tab
 	key("w", "CMD", "ALT", act.CloseCurrentTab({ confirm = true })),
 
