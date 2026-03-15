@@ -187,7 +187,10 @@ config.mouse_bindings = {
 -- ---------------------------------------------------------------------------
 -- Tab Title Formatting
 -- ---------------------------------------------------------------------------
-local MAX_TITLE_LEN = 70
+-- NOTE: MAX_TITLE_LEN only clamps the string; the fancy tab bar may truncate
+-- further based on available space. tab_max_width only works in retro mode.
+local MAX_TITLE_LEN = 100
+local MIN_TAB_WIDTH = 20
 
 local function get_title(tab)
 	if tab.tab_title and #tab.tab_title > 0 then
@@ -212,7 +215,14 @@ wezterm.on("format-tab-title", function(tab)
 
 	local index = tab.tab_index + 1
 	local short = clamp(title, MAX_TITLE_LEN)
-	return "  " .. index .. ": " .. short .. "  "
+	local formatted = "  " .. index .. ": " .. short .. "  "
+	if #formatted < MIN_TAB_WIDTH then
+		local pad = MIN_TAB_WIDTH - #formatted
+		local left = math.floor(pad / 2)
+		local right = pad - left
+		formatted = string.rep(" ", left) .. formatted .. string.rep(" ", right)
+	end
+	return formatted
 end)
 
 -- ---------------------------------------------------------------------------
