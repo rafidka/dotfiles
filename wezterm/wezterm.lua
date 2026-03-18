@@ -175,6 +175,9 @@ config.keys = collect(
 	-- Shift+Enter sends ESC+CR (for Claude Code)
 	key_both("Enter", "SHIFT", act.SendString("\x1b\r")),
 
+	-- Command palette
+	key("p", "CMD|SHIFT", "ALT|SHIFT", act.ActivateCommandPalette),
+
 	-- Scroll
 	key_both("PageUp", "NONE", act.ScrollByPage(-1)),
 	key_both("PageDown", "NONE", act.ScrollByPage(1)),
@@ -233,6 +236,26 @@ wezterm.on("format-tab-title", function(tab)
 		formatted = string.rep(" ", left) .. formatted .. string.rep(" ", right)
 	end
 	return formatted
+end)
+
+-- ---------------------------------------------------------------------------
+-- Command Palette
+-- ---------------------------------------------------------------------------
+wezterm.on("augment-command-palette", function()
+	return {
+		{
+			brief = "Shell: Rename Tab. Set a custom title for the current tab",
+			icon = "md_rename_box",
+			action = act.PromptInputLine({
+				description = "Enter new name for tab:",
+				action = wezterm.action_callback(function(window, _, line)
+					if line then
+						window:active_tab():set_title(line)
+					end
+				end),
+			}),
+		},
+	}
 end)
 
 -- ---------------------------------------------------------------------------
