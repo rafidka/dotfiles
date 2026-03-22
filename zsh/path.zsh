@@ -40,3 +40,6 @@ fi
 # Vim configuration - use VIMINIT to source our vimrc without symlinks
 export VIMINIT="source ${DOTFILES}/vim/vimrc"
 
+# Python REPL startup file
+export PYTHONSTARTUP="${DOTFILES}/python/pythonrc.py"
+
