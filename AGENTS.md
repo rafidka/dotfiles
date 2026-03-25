@@ -20,9 +20,13 @@ vim -u vim/vimrc +PlugStatus +qall  # Test vim config
 activate.sh          # Entry point (zsh guard, sets DOTFILES, sources init.zsh)
 install.sh           # First-time setup (bash)
 bin/                 # Executable scripts (added to PATH)
+fedora/              # Fedora-specific tools (only loaded on Fedora)
+  bin/               # Fedora-specific scripts
+  toolbox/           # Toolbox container definitions
 zsh/
   init.zsh           # Sources modules in order
   path.zsh           # PATH, EDITOR, VIMINIT
+  fedora.zsh         # Fedora-specific config (sourced on Fedora only)
   aliases.zsh        # Shell aliases
   functions.zsh      # Shell functions
   local.zsh          # Machine-specific (gitignored)
@@ -47,6 +51,7 @@ vim/
               ├─> fzf.zsh       (fuzzy finder)
               ├─> functions.zsh (shell functions)
               ├─> aliases.zsh   (aliases)
+              ├─> fedora.zsh    (Fedora only: adds fedora/bin to PATH)
               └─> local.zsh     (if exists)
 ```
 
@@ -179,6 +184,7 @@ command -v docker &>/dev/null || { echo "Error: Docker not found" >&2; exit 1; }
 **New bin script:** Create in `bin/`, include `show_help()`, support `-h/--help`
 **New vim plugin:** Add `Plug 'author/plugin'` in `vim/vimrc`
 **New filetype:** Create `vim/after/ftplugin/<type>.vim` with `setlocal`
+**New Fedora tool:** Create in `fedora/bin/` or `fedora/toolbox/`
 
 ## Constraints
 
@@ -199,6 +205,19 @@ fi
 ```
 
 Used for: `ls` colors, `ps` syntax, clipboard commands.
+
+## Fedora-Specific
+
+Files in `fedora/` directory are only loaded on Fedora systems. Detection uses `/etc/os-release`:
+
+```bash
+if grep -qi "^ID=fedora" /etc/os-release 2>/dev/null; then
+    # Fedora-specific config
+fi
+```
+
+**fedora/bin/** - Scripts added to PATH on Fedora only
+**fedora/toolbox/** - Containerfile definitions for `toolbox create`
 
 ---
 

@@ -1,0 +1,61 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOLBOX_DIR="${SCRIPT_DIR}/../toolbox"
+DATE_TAG="$(date +%Y%m%d)"
+REGISTRY="${REGISTRY:-localhost}"
+
+# Discover toolbox names from Containerfile.* files
+get_names() {
+    local names=()
+    for containerfile in "${TOOLBOX_DIR}"/Containerfile.*; do
+        [[ -f "${containerfile}" ]] && names+=("$(basename "${containerfile}" | sed 's/^Containerfile\.//')")
+    done
+    printf '%s\n' "${names[@]}"
+}
+
+stop_toolbox() {
+    local name="$1"
+    if toolbox list 2>/dev/null | grep -q "${name}"; then
+        echo "Stopping ${name}..."
+        podman stop "${name}" 2>/dev/null || true
+        echo "Removing ${name}..."
+        toolbox rm "${name}" 2>/dev/null || true
+    fi
+}
+
+build_image() {
+    local containerfile="$1"
+    local image_name="$2"
+    
+    echo "Building ${image_name}..."
+    podman build \
+        -t "${REGISTRY}/${image_name}:latest" \
+        -t "${REGISTRY}/${image_name}:${DATE_TAG}" \
+        -f "${containerfile}" \
+        "${TOOLBOX_DIR}"
+    
+    echo "Successfully built ${image_name}"
+}
+
+create_toolbox() {
+    local name="$1"
+    
+    echo "Creating toolbox ${name}..."
+    toolbox create --image "${REGISTRY}/${name}:latest" "${name}"
+}
+
+while IFS= read -r name; do
+    stop_toolbox "${name}"
+done < <(get_names)
+
+while IFS= read -r name; do
+    build_image "${TOOLBOX_DIR}/Containerfile.${name}" "${name}"
+done < <(get_names)
+
+while IFS= read -r name; do
+    create_toolbox "${name}"
+done < <(get_names)
+
+echo "All toolboxes created successfully"

@@ -1,0 +1,9 @@
+FROM registry.fedoraproject.org/fedora-toolbox:latest
+
+RUN dnf -y install \
+  nodejs \
+  npm \
+  lm_sensors \
+  zoxide \
+  zsh \
+  && dnf clean all

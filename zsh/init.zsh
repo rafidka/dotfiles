@@ -21,8 +21,13 @@ source "${DOTFILES}/zsh/functions.zsh"
 # 6. Aliases (last, so they can use functions)
 source "${DOTFILES}/zsh/aliases.zsh"
 
-# 7. Local overrides (machine-specific, gitignored)
+# 7. Fedora-specific configuration (only on Fedora)
+if grep -qi "^ID=fedora" /etc/os-release 2>/dev/null; then
+    source "${DOTFILES}/zsh/fedora.zsh"
+fi
+
+# 8. Local overrides (machine-specific, gitignored)
 [[ -f "${DOTFILES}/zsh/local.zsh" ]] && source "${DOTFILES}/zsh/local.zsh" || true
 
-# 8. Load secrets
+# 9. Load secrets
 [[ -f ~/.secrets ]] && source ~/.secrets

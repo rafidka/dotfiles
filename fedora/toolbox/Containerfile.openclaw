@@ -1,0 +1,10 @@
+FROM registry.fedoraproject.org/fedora-toolbox:latest
+
+RUN dnf -y install \
+  zsh \
+  zoxide \
+  nodejs \
+  npm \
+  && dnf clean all
+
+RUN npm install -g openclaw@latest
