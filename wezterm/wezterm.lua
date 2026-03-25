@@ -22,11 +22,7 @@ config.color_scheme = "Builtin Tango Dark"
 -- ---------------------------------------------------------------------------
 local emoji_font = IS_MAC and "Apple Color Emoji" or "Noto Color Emoji"
 config.font = wezterm.font_with_fallback({
-	{ family = "MesloLGS NF", weight = "Regular" },
-	"JetBrains Mono",
-	"Cascadia Code",
-	"FiraCode Nerd Font",
-	"Symbols Nerd Font",
+	{ family = "MesloLGS Nerd Font Mono", weight = "Regular" },
 	emoji_font,
 })
 config.font_size = IS_MAC and 14.0 or 11.0
