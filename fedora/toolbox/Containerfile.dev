@@ -1,7 +1,9 @@
 FROM registry.fedoraproject.org/fedora-toolbox:latest
 
 RUN dnf -y install \
+  clang \
   lm_sensors \
+  g++ \
   nodejs \
   npm \
   nvim \
