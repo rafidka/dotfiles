@@ -49,12 +49,12 @@ fi
 
 # --- Utilities ---
 alias cls='clear'
-alias d='docker'
-alias icat='timg'
-alias ipy='ipython'
-alias lgit='lazygit'
-alias newpass='openssl rand -base64 32'
-alias py='python3'
+command -v docker &>/dev/null && alias d='docker'
+command -v timg &>/dev/null && alias icat='timg'
+command -v ipython &>/dev/null && alias ipy='ipython'
+command -v lazygit &>/dev/null && alias lgit='lazygit'
+command -v openssl &>/dev/null && alias newpass='openssl rand -base64 32'
+command -v python3 &>/dev/null && alias py='python3'
 
 # --- bat (batcat on Debian/Ubuntu, bat elsewhere) ---
 if command -v batcat &>/dev/null; then

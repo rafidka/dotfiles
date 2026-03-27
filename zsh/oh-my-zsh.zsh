@@ -17,12 +17,12 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 plugins=(
     git
     colored-man-pages
-    zoxide
     fzf-tab
     zsh-autosuggestions
     zsh-completions
     zsh-syntax-highlighting
 )
+(( $+commands[zoxide] )) && plugins+=(zoxide)
 
 # Oh-my-zsh settings
 HYPHEN_INSENSITIVE="true"
