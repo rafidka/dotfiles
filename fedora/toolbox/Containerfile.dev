@@ -1,12 +1,17 @@
 FROM registry.fedoraproject.org/fedora-toolbox:latest
 
 RUN dnf -y install \
+  bat \
   clang \
-  lm_sensors \
   g++ \
+  htop \
   nodejs \
-  npm \
   nvim \
+  sensors \
+  timg \
+  vim \
   zoxide \
   zsh \
   && dnf clean all
+
+
