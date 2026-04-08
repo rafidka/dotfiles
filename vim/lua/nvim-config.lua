@@ -1,6 +1,12 @@
 -- nvim-config.lua - Neovim-specific configuration
 -- This file is loaded only in Neovim (see vimrc)
 
+-- Check if running in VSCode
+if vim.g.vscode then
+    require('nvim-config-vscode')
+    return
+end
+
 -- Helper to check if a plugin is loaded
 local function plugin_loaded(plugin)
     local ok, _ = pcall(require, plugin)

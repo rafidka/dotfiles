@@ -19,40 +19,12 @@ endif
 " --- Plugins ---
 call plug#begin(s:vimdir . '/plugged')
 
-" Color scheme
-Plug 'tomasiser/vim-code-dark'
-
-" Status line (vim-only, neovim uses lualine)
-if !has('nvim')
-    Plug 'vim-airline/vim-airline'
-    Plug 'vim-airline/vim-airline-themes'
-endif
-
-" Fuzzy finder (vim-only, neovim uses telescope)
-if !has('nvim')
-    Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-    Plug 'junegunn/fzf.vim'
-endif
-
-" Language support
-Plug 'vim-python/python-syntax'
-
-" Utilities
+" Essential Vim editing enhancements (load in all environments)
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-surround'
-Plug 'tpope/vim-fugitive'
-Plug 'tell-k/vim-autopep8'
 
-" Git integration
-Plug 'airblade/vim-gitgutter'
-
-" Which-key (vim-only, neovim uses which-key.nvim)
-if !has('nvim')
-    Plug 'liuchengxu/vim-which-key'
-endif
-
-" --- Neovim-only plugins ---
-if has('nvim')
+" Standalone Neovim plugins (skip in VSCode)
+if has('nvim') && !exists('g:vscode')
     " Colorscheme (treesitter-aware)
     Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 
@@ -96,30 +68,45 @@ if has('nvim')
 
     " Session management
     Plug 'folke/persistence.nvim'
+
+" Vim-only plugins for standalone vim (not VSCode)
+elseif !has('nvim')
+    " Color scheme
+    Plug 'tomasiser/vim-code-dark'
+
+    " Status line
+    Plug 'vim-airline/vim-airline'
+    Plug 'vim-airline/vim-airline-themes'
+
+    " Fuzzy finder
+    Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+    Plug 'junegunn/fzf.vim'
+
+    " Language support
+    Plug 'vim-python/python-syntax'
+
+    " Git integration
+    Plug 'tpope/vim-fugitive'
+    Plug 'airblade/vim-gitgutter'
+
+    " Python formatting
+    Plug 'tell-k/vim-autopep8'
+
+    " Which-key
+    Plug 'liuchengxu/vim-which-key'
 endif
 
 call plug#end()
 
-" --- General Settings ---
+" --- General Settings (essential for all environments) ---
 syntax enable
 filetype plugin indent on
 set encoding=utf-8
 set fileencoding=utf-8
-set number
-set relativenumber
-set cursorline
 set showmatch
 set wildmenu
 set wildmode=longest:full,full
-set mouse=a
-if !has('nvim')
-    set ttymouse=sgr
-endif
 set hidden
-set updatetime=300
-set signcolumn=yes
-set shortmess+=c
-set scrolloff=5
 
 " Indentation
 set autoindent
@@ -138,50 +125,54 @@ set smartcase
 " Line wrapping
 set wrap
 set linebreak
-set textwidth=80
 
-" Backups (disable - use git instead)
-set nobackup
-set nowritebackup
-set noswapfile
+" --- Standalone-only Settings (skip in VSCode) ---
+if !exists('g:vscode')
+    " Visual settings
+    set number
+    set relativenumber
+    set cursorline
+    set signcolumn=yes
+    set shortmess+=c
+    set scrolloff=5
+    set mouse=a
+    if !has('nvim')
+        set ttymouse=sgr
+    endif
+    set updatetime=300
 
-" Persistent undo
-set undofile
-let &undodir = s:vimdir . '/undodir'
-if !isdirectory(&undodir)
-    call mkdir(&undodir, 'p')
-endif
+    " Line wrapping text width
+    set textwidth=80
 
-" --- Color Scheme ---
-if has('termguicolors')
-    set termguicolors
-endif
-set background=dark
-if has('nvim')
-    colorscheme catppuccin
-else
-    colorscheme codedark
-    let g:airline_theme = 'codedark'
+    " Backups (disable - use git instead)
+    set nobackup
+    set nowritebackup
+    set noswapfile
+
+    " Persistent undo
+    set undofile
+    let &undodir = s:vimdir . '/undodir'
+    if !isdirectory(&undodir)
+        call mkdir(&undodir, 'p')
+    endif
+
+    " Color Scheme
+    if has('termguicolors')
+        set termguicolors
+    endif
+    set background=dark
+    if has('nvim')
+        colorscheme catppuccin
+    else
+        colorscheme codedark
+        let g:airline_theme = 'codedark'
+    endif
 endif
 
 " --- Leader Key ---
 let mapleader = " "
 
-" --- Key Mappings ---
-
-" File navigation (fzf)
-nnoremap <Leader>ff :Files<CR>
-nnoremap <Leader>fg :GFiles<CR>
-nnoremap <Leader>fb :Buffers<CR>
-nnoremap <Leader>fc :Rg<CR>
-nnoremap <Leader>fh :History<CR>
-
-" Buffer navigation (neovim uses bufferline.nvim with <Leader>t shortcuts)
-if !has('nvim')
-    nnoremap [b :bprevious<CR>
-    nnoremap ]b :bnext<CR>
-    nnoremap <Leader>bd :bdelete<CR>
-endif
+" --- Essential Key Mappings (for all environments) ---
 
 " Clear search highlight
 nnoremap <Leader>/ :nohlsearch<CR>
@@ -190,19 +181,6 @@ nnoremap <Leader>/ :nohlsearch<CR>
 nnoremap <Leader>w :w<CR>
 nnoremap <Leader>q :q<CR>
 nnoremap <Leader>x :x<CR>
-
-" System clipboard (Leader+y to copy, Leader+p to paste)
-nnoremap <Leader>y "+y
-vnoremap <Leader>y "+y
-nnoremap <Leader>p "+p
-vnoremap <Leader>p "+p
-nnoremap <Leader>P "+P
-
-" Window navigation
-nnoremap <C-h> <C-w>h
-nnoremap <C-j> <C-w>j
-nnoremap <C-k> <C-w>k
-nnoremap <C-l> <C-w>l
 
 " Move lines up/down in visual mode
 vnoremap J :m '>+1<CR>gv=gv
@@ -217,133 +195,164 @@ nnoremap N Nzzzv
 " Visual selection search
 vnoremap // y/\V<C-R>=escape(@",'/\')<CR><CR>
 
-" --- Plugin Configurations ---
+" --- Standalone-only Key Mappings (skip in VSCode) ---
+if !exists('g:vscode')
+    " File navigation (fzf for vim, telescope for neovim)
+    nnoremap <Leader>ff :Files<CR>
+    nnoremap <Leader>fg :GFiles<CR>
+    nnoremap <Leader>fb :Buffers<CR>
+    nnoremap <Leader>fc :Rg<CR>
+    nnoremap <Leader>fh :History<CR>
 
-" Airline (vim-only, neovim uses lualine)
-if !has('nvim')
-    let g:airline#extensions#tabline#enabled = 1
-    let g:airline#extensions#tabline#formatter = 'unique_tail'
-    let g:airline_powerline_fonts = 1
+    " Buffer navigation (neovim uses bufferline.nvim with <Leader>t shortcuts)
+    if !has('nvim')
+        nnoremap [b :bprevious<CR>
+        nnoremap ]b :bnext<CR>
+        nnoremap <Leader>bd :bdelete<CR>
+    endif
+
+    " System clipboard (Leader+y to copy, Leader+p to paste)
+    nnoremap <Leader>y "+y
+    vnoremap <Leader>y "+y
+    nnoremap <Leader>p "+p
+    vnoremap <Leader>p "+p
+    nnoremap <Leader>P "+P
+
+    " Window navigation
+    nnoremap <C-h> <C-w>h
+    nnoremap <C-j> <C-w>j
+    nnoremap <C-k> <C-w>k
+    nnoremap <C-l> <C-w>l
 endif
 
-" Python syntax
-let g:python_highlight_all = 1
+" --- Plugin Configurations (standalone only) ---
+if !exists('g:vscode')
+    " Airline (vim-only, neovim uses lualine)
+    if !has('nvim')
+        let g:airline#extensions#tabline#enabled = 1
+        let g:airline#extensions#tabline#formatter = 'unique_tail'
+        let g:airline_powerline_fonts = 1
+    endif
 
-" Autopep8
-let g:autopep8_max_line_length = 88
-let g:autopep8_disable_show_diff = 1
-nnoremap <Leader>ap :Autopep8<CR>
+    " Python syntax
+    let g:python_highlight_all = 1
 
-" --- Cursor Shape ---
-if has('nvim')
-    set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
-else
-    let &t_SI = "\e[6 q"  " Insert mode: bar
-    let &t_EI = "\e[2 q"  " Normal mode: block
-    let &t_SR = "\e[4 q"  " Replace mode: underline
-endif
+    " Autopep8
+    let g:autopep8_max_line_length = 88
+    let g:autopep8_disable_show_diff = 1
+    nnoremap <Leader>ap :Autopep8<CR>
 
-" --- Which-Key Configuration ---
-let g:which_key_map = {}
+    " --- Cursor Shape ---
+    if has('nvim')
+        set guicursor=n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50
+    else
+        let &t_SI = "\e[6 q"  " Insert mode: bar
+        let &t_EI = "\e[2 q"  " Normal mode: block
+        let &t_SR = "\e[4 q"  " Replace mode: underline
+    endif
 
-" File/Find commands
-let g:which_key_map.f = {
-    \ 'name': '+file/find',
-    \ 'f': 'find files',
-    \ 'g': 'git files',
-    \ 'b': 'buffers',
-    \ 'c': 'search content (rg)',
-    \ 'h': 'file history',
-    \ 'e': 'file explorer',
-    \ }
+    " --- Which-Key Configuration ---
+    let g:which_key_map = {}
 
-" File explorer (quick access)
-let g:which_key_map.e = 'file explorer'
-
-" Buffer commands
-let g:which_key_map.b = {
-    \ 'name': '+buffer',
-    \ 'd': 'delete buffer',
-    \ }
-
-" Quick actions
-let g:which_key_map.w = 'save'
-let g:which_key_map.q = 'quit'
-let g:which_key_map.x = 'save and quit'
-let g:which_key_map['/'] = 'clear search highlight'
-
-" Clipboard
-let g:which_key_map.y = 'clipboard yank'
-let g:which_key_map.p = 'clipboard paste'
-let g:which_key_map.P = 'clipboard paste before'
-
-" Autopep8
-let g:which_key_map.a = {
-    \ 'name': '+actions',
-    \ 'p': 'autopep8 format',
-    \ }
-
-" LSP (neovim only - configured in lua/nvim-config.lua)
-if has('nvim')
-    let g:which_key_map.l = {
-        \ 'name': '+lsp',
-        \ 'r': 'rename',
-        \ 'a': 'code action',
-        \ 'f': 'format',
-        \ 'd': 'diagnostics',
+    " File/Find commands
+    let g:which_key_map.f = {
+        \ 'name': '+file/find',
+        \ 'f': 'find files',
+        \ 'g': 'git files',
+        \ 'b': 'buffers',
+        \ 'c': 'search content (rg)',
+        \ 'h': 'file history',
+        \ 'e': 'file explorer',
         \ }
-endif
 
-" Register which-key (vim-only, neovim uses which-key.nvim)
-if !has('nvim')
-    autocmd! User vim-which-key call which_key#register('<Space>', "g:which_key_map")
-    nnoremap <silent> <Leader> :<C-u>WhichKey '<Space>'<CR>
-    vnoremap <silent> <Leader> :<C-u>WhichKeyVisual '<Space>'<CR>
-endif
-set timeoutlen=500   " Time for mapped sequences (which-key popup)
-set ttimeoutlen=10   " Time for terminal key codes (fast Escape)
+    " File explorer (quick access)
+    let g:which_key_map.e = 'file explorer'
 
-" --- FZF Shortcut Picker (vim-only, neovim uses telescope) ---
-if !has('nvim')
-    let s:shortcut_list = [
-        \ ['ff',  'Find files',              ':Files'],
-        \ ['fg',  'Git files',               ':GFiles'],
-        \ ['fb',  'Buffers',                 ':Buffers'],
-        \ ['fc',  'Search content (ripgrep)', ':Rg'],
-        \ ['fh',  'File history',            ':History'],
-        \ ['bd',  'Delete buffer',           ':bdelete'],
-        \ ['w',   'Save',                    ':w'],
-        \ ['q',   'Quit',                    ':q'],
-        \ ['x',   'Save and quit',           ':x'],
-        \ ['/',   'Clear search highlight',  ':nohlsearch'],
-        \ ['ap',  'Autopep8 format',         ':Autopep8'],
-        \ ]
+    " Buffer commands
+    let g:which_key_map.b = {
+        \ 'name': '+buffer',
+        \ 'd': 'delete buffer',
+        \ }
 
-    function! s:shortcuts_sink(line)
-        let l:key = matchstr(a:line, '^\S\+')
-        for [keys, desc, cmd] in s:shortcut_list
-            if keys ==# l:key
-                execute cmd
-                return
-            endif
-        endfor
-    endfunction
+    " Quick actions
+    let g:which_key_map.w = 'save'
+    let g:which_key_map.q = 'quit'
+    let g:which_key_map.x = 'save and quit'
+    let g:which_key_map['/'] = 'clear search highlight'
 
-    function! s:list_shortcuts()
-        let l:result = []
-        for [keys, desc, cmd] in s:shortcut_list
-            call add(l:result, printf('%-6s  %s', keys, desc))
-        endfor
-        return l:result
-    endfunction
+    " Clipboard
+    let g:which_key_map.y = 'clipboard yank'
+    let g:which_key_map.p = 'clipboard paste'
+    let g:which_key_map.P = 'clipboard paste before'
 
-    command! Shortcuts call fzf#run(fzf#wrap({
-        \ 'source': s:list_shortcuts(),
-        \ 'sink': function('s:shortcuts_sink'),
-        \ 'options': '--prompt="Shortcuts> "'
-        \ }))
+    " Autopep8
+    let g:which_key_map.a = {
+        \ 'name': '+actions',
+        \ 'p': 'autopep8 format',
+        \ }
 
-    nnoremap <Leader><Leader> :Shortcuts<CR>
+    " LSP (neovim only - configured in lua/nvim-config.lua)
+    if has('nvim')
+        let g:which_key_map.l = {
+            \ 'name': '+lsp',
+            \ 'r': 'rename',
+            \ 'a': 'code action',
+            \ 'f': 'format',
+            \ 'd': 'diagnostics',
+            \ }
+    endif
+
+    " Register which-key (vim-only, neovim uses which-key.nvim)
+    if !has('nvim')
+        autocmd! User vim-which-key call which_key#register('<Space>', "g:which_key_map")
+        nnoremap <silent> <Leader> :<C-u>WhichKey '<Space>'<CR>
+        vnoremap <silent> <Leader> :<C-u>WhichKeyVisual '<Space>'<CR>
+    endif
+    set timeoutlen=500   " Time for mapped sequences (which-key popup)
+    set ttimeoutlen=10   " Time for terminal key codes (fast Escape)
+
+    " --- FZF Shortcut Picker (vim-only, neovim uses telescope) ---
+    if !has('nvim')
+        let s:shortcut_list = [
+            \ ['ff',  'Find files',              ':Files'],
+            \ ['fg',  'Git files',               ':GFiles'],
+            \ ['fb',  'Buffers',                 ':Buffers'],
+            \ ['fc',  'Search content (ripgrep)', ':Rg'],
+            \ ['fh',  'File history',            ':History'],
+            \ ['bd',  'Delete buffer',           ':bdelete'],
+            \ ['w',   'Save',                    ':w'],
+            \ ['q',   'Quit',                    ':q'],
+            \ ['x',   'Save and quit',           ':x'],
+            \ ['/',   'Clear search highlight',  ':nohlsearch'],
+            \ ['ap',  'Autopep8 format',         ':Autopep8'],
+            \ ]
+
+        function! s:shortcuts_sink(line)
+            let l:key = matchstr(a:line, '^\S\+')
+            for [keys, desc, cmd] in s:shortcut_list
+                if keys ==# l:key
+                    execute cmd
+                    return
+                endif
+            endfor
+        endfunction
+
+        function! s:list_shortcuts()
+            let l:result = []
+            for [keys, desc, cmd] in s:shortcut_list
+                call add(l:result, printf('%-6s  %s', keys, desc))
+            endfor
+            return l:result
+        endfunction
+
+        command! Shortcuts call fzf#run(fzf#wrap({
+            \ 'source': s:list_shortcuts(),
+            \ 'sink': function('s:shortcuts_sink'),
+            \ 'options': '--prompt="Shortcuts> "'
+            \ }))
+
+        nnoremap <Leader><Leader> :Shortcuts<CR>
+    endif
 endif
 
 " --- Neovim-specific configuration ---
