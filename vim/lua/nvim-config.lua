@@ -7,6 +7,18 @@ if vim.g.vscode then
     return
 end
 
+-- Check Neovim version
+local nvim_version = vim.version()
+local has_nvim_011 = nvim_version.major > 0 or (nvim_version.major == 0 and nvim_version.minor >= 11)
+
+if not has_nvim_011 then
+    vim.notify(
+        'Neovim < 0.11 detected. Some features (LSP, completion, telescope, treesitter) are disabled.\n' ..
+        'Upgrade to Neovim 0.11+ for full functionality.',
+        vim.log.levels.WARN
+    )
+end
+
 -- Helper to check if a plugin is loaded
 local function plugin_loaded(plugin)
     local ok, _ = pcall(require, plugin)
@@ -85,7 +97,7 @@ end
 --------------------------------------------------------------------------------
 -- Telescope (Fuzzy Finder)
 --------------------------------------------------------------------------------
-if plugin_loaded('telescope') then
+if has_nvim_011 and plugin_loaded('telescope') then
     local telescope = require('telescope')
     local builtin = require('telescope.builtin')
     local pickers = require('telescope.pickers')
@@ -505,7 +517,7 @@ end
 --------------------------------------------------------------------------------
 -- Treesitter Configuration (new API for nvim-treesitter)
 --------------------------------------------------------------------------------
-if plugin_loaded('nvim-treesitter') then
+if has_nvim_011 and plugin_loaded('nvim-treesitter') then
     local ts = require('nvim-treesitter')
 
     -- Install parsers (async, runs in background)
@@ -527,22 +539,24 @@ if plugin_loaded('nvim-treesitter') then
 end
 
 -- Enable treesitter highlighting for supported filetypes
-vim.api.nvim_create_autocmd('FileType', {
-    pattern = {
-        'python', 'typescript', 'javascript', 'typescriptreact', 'javascriptreact',
-        'bash', 'sh', 'lua', 'vim', 'json', 'yaml', 'toml', 'markdown',
-    },
-    callback = function()
-        -- Only start if parser is available
-        local ok = pcall(vim.treesitter.start)
-        if ok then
-            -- Enable treesitter-based folding
-            vim.wo.foldmethod = 'expr'
-            vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-            vim.wo.foldenable = false  -- Don't fold by default
-        end
-    end,
-})
+if has_nvim_011 then
+    vim.api.nvim_create_autocmd('FileType', {
+        pattern = {
+            'python', 'typescript', 'javascript', 'typescriptreact', 'javascriptreact',
+            'bash', 'sh', 'lua', 'vim', 'json', 'yaml', 'toml', 'markdown',
+        },
+        callback = function()
+            -- Only start if parser is available
+            local ok = pcall(vim.treesitter.start)
+            if ok then
+                -- Enable treesitter-based folding
+                vim.wo.foldmethod = 'expr'
+                vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+                vim.wo.foldenable = false  -- Don't fold by default
+            end
+        end,
+    })
+end
 
 -- NOTE: Incremental selection was removed in the new nvim-treesitter rewrite.
 -- The old API (nvim-treesitter.incremental_selection) no longer exists.
@@ -550,6 +564,7 @@ vim.api.nvim_create_autocmd('FileType', {
 --------------------------------------------------------------------------------
 -- LSP Configuration (nvim 0.11+ using vim.lsp.config)
 --------------------------------------------------------------------------------
+if has_nvim_011 then
 
 -- Diagnostic configuration
 vim.diagnostic.config({
@@ -643,10 +658,12 @@ vim.lsp.config('bashls', {
 -- Enable the language servers
 vim.lsp.enable({ 'pyright', 'ts_ls', 'bashls' })
 
+end
+
 --------------------------------------------------------------------------------
 -- Autocompletion (nvim-cmp)
 --------------------------------------------------------------------------------
-if plugin_loaded('cmp') then
+if has_nvim_011 and plugin_loaded('cmp') then
     local cmp = require('cmp')
     local luasnip_ok, luasnip = pcall(require, 'luasnip')
 
