@@ -273,7 +273,7 @@ end
 if plugin_loaded('lualine') then
     require('lualine').setup({
         options = {
-            theme = 'catppuccin',
+            theme = 'catppuccin-mocha',
             component_separators = { left = '', right = '' },
             section_separators = { left = '', right = '' },
         },

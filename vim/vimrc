@@ -172,7 +172,7 @@ if !exists('g:vscode')
     endif
     set background=dark
     if has('nvim')
-        colorscheme catppuccin
+        colorscheme catppuccin-mocha
     else
         colorscheme codedark
         let g:airline_theme = 'codedark'
