@@ -64,6 +64,11 @@ elif command -v bat &>/dev/null; then
     alias cat='bat -pp'
 fi
 
+# --- fd (fdfind on Debian/Ubuntu) ---
+if command -v fdfind &>/dev/null && ! command -v fd &>/dev/null; then
+    alias fd='fdfind'
+fi
+
 # --- cat like for CSV/TSV ---
 alias cat_csv="column -s, -t"
 alias cat_tsv="column -ts $'\t'"
