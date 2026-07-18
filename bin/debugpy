@@ -1,0 +1,394 @@
+#!/usr/bin/env python3
+"""Wrap an ordinary Python command so it launches under debugpy.
+
+Rewrites, e.g.:
+    debugpy uv run python -m mypkg --foo
+into:
+    uv run python -m debugpy --listen 127.0.0.1:5678 --wait-for-client -m mypkg --foo
+
+Everything before the interpreter (uv run / poetry run / env VARS / ...) is
+preserved verbatim. Interpreter flags (-u, -O, -X ...) stay before `-m debugpy`.
+The target (file / -m module / -c code) and its arguments follow.
+
+Before exec, the target interpreter is probed (via the same launcher chain) to
+confirm that debugpy is importable; if it is missing, a launcher-specific install
+hint is printed instead of a cryptic "No module named debugpy". Skip the probe
+with --no-check or DEBUGPY_SKIP_CHECK=1.
+
+Options (before the command; use `--` to force the end of debugpy's own options):
+    --host HOST     listen address        (env DEBUGPY_HOST, default 127.0.0.1)
+    --port PORT     listen port           (env DEBUGPY_PORT, default 5678)
+    --wait/--no-wait  wait for the client  (env DEBUGPY_WAIT, default wait)
+    --dry-run       print the command, do not exec
+    --no-check      skip the debugpy install probe  (env DEBUGPY_SKIP_CHECK)
+    --debugpy-python  place immediately before the intended interpreter when the
+                    command contains more than one python-looking token
+"""
+
+import os
+import re
+import shlex
+import subprocess
+import sys
+
+# Interpreter token: python, python3, python3.11, Python.exe, ...
+PYTHON_NAME = re.compile(r"python(?:\d+(?:\.\d+)*)?(?:\.exe)?", re.IGNORECASE)
+PYTHON_MARKER = "--debugpy-python"
+
+# Probe that exits 0 iff debugpy is importable, without importing it.
+DEBUGPY_PROBE = (
+    "import importlib.util, sys; "
+    "sys.exit(0 if importlib.util.find_spec('debugpy') else 1)"
+)
+# Give launchers (e.g. `uv run`) room to resolve/download before giving up.
+CHECK_TIMEOUT_SECONDS = 120
+
+# CPython single-character interpreter options.
+SHORT_NO_ARG = set("bBdEhiIOPqRsStuvVx?")  # take no value
+SHORT_WITH_ARG = set("WXJ")                # take a value, never a target
+SHORT_TARGET = set("cm")                   # -c / -m end interpreter options
+
+LONG_NO_ARG = {"--help", "--version", "--help-env", "--help-xoptions", "--help-all"}
+LONG_WITH_ARG = {"--check-hash-based-pycs"}
+
+
+def usage(stream=sys.stderr):
+    print(
+        "usage: debugpy [--host HOST] [--port PORT] [--wait|--no-wait] "
+        "[--dry-run] [--no-check] [--] <command...>\n"
+        "  e.g. debugpy uv run python -m mypkg --flag\n"
+        "       debugpy poetry run python script.py arg\n"
+        "  env: DEBUGPY_HOST, DEBUGPY_PORT, DEBUGPY_WAIT, DEBUGPY_SKIP_CHECK",
+        file=stream,
+    )
+
+
+def env_bool(name, default):
+    value = os.environ.get(name)
+    if value is None or value.strip() == "":
+        return default
+    return value.strip().lower() not in {"0", "false", "no", "off"}
+
+
+def parse_wrapper_options(argv):
+    host = os.environ.get("DEBUGPY_HOST", "127.0.0.1")
+    port = os.environ.get("DEBUGPY_PORT", "5678")
+    wait = env_bool("DEBUGPY_WAIT", True)
+    dry_run = False
+    skip_check = env_bool("DEBUGPY_SKIP_CHECK", False)
+
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg == "--":
+            i += 1
+            break
+        if arg in {"-h", "--help"}:
+            usage(sys.stdout)
+            raise SystemExit(0)
+        if arg in {"--host", "--port"}:
+            if i + 1 >= len(argv):
+                raise ValueError(f"{arg} requires a value")
+            if arg == "--host":
+                host = argv[i + 1]
+            else:
+                port = argv[i + 1]
+            i += 2
+            continue
+        if arg == "--no-wait":
+            wait = False
+            i += 1
+            continue
+        if arg == "--wait":
+            wait = True
+            i += 1
+            continue
+        if arg == "--dry-run":
+            dry_run = True
+            i += 1
+            continue
+        if arg == "--no-check":
+            skip_check = True
+            i += 1
+            continue
+        break
+
+    try:
+        port_number = int(port)
+    except ValueError:
+        raise ValueError(f"invalid port: {port!r}") from None
+    if not 1 <= port_number <= 65535:
+        raise ValueError(f"port must be between 1 and 65535: {port_number}")
+
+    return host, port_number, wait, dry_run, skip_check, argv[i:]
+
+
+def is_python_executable(value):
+    return PYTHON_NAME.fullmatch(os.path.basename(value)) is not None
+
+
+def find_python_index(args):
+    """Index of the interpreter token in `args` (mutates out any marker)."""
+    marker_indexes = [i for i, v in enumerate(args) if v == PYTHON_MARKER]
+    if marker_indexes:
+        if len(marker_indexes) != 1:
+            raise ValueError(f"use {PYTHON_MARKER} at most once")
+        marker_index = marker_indexes[0]
+        del args[marker_index]
+        if marker_index >= len(args) or not is_python_executable(args[marker_index]):
+            raise ValueError(
+                f"{PYTHON_MARKER} must be immediately followed by a Python interpreter"
+            )
+        return marker_index
+
+    candidates = [i for i, v in enumerate(args) if is_python_executable(v)]
+    if not candidates:
+        raise ValueError("could not find a Python interpreter in the command")
+    if len(candidates) > 1:
+        rendered = ", ".join(f"{i}:{args[i]}" for i in candidates)
+        raise ValueError(
+            f"multiple Python-looking tokens found ({rendered}); place "
+            f"{PYTHON_MARKER} immediately before the intended interpreter"
+        )
+    return candidates[0]
+
+
+def split_python_options(args):
+    """Split interpreter options from the debugpy target.
+
+    Returns (interpreter_options, target). `target` is [] (interactive) or
+    begins with a filename, '-', '-m', or '-c'. Handles combined short flags
+    (-Es), attached values (-Xfoo, -Wignore, -mmod, -ccode), separated values
+    (-X foo), and the '--' end-of-options marker.
+    """
+    options = []
+    i = 0
+    n = len(args)
+    while i < n:
+        tok = args[i]
+
+        if tok == "--":
+            target = args[i + 1:]
+            if target and target[0].startswith("-"):
+                raise ValueError(
+                    "debugpy has no '--' separator, so it cannot run a target "
+                    f"whose name starts with '-': {target[0]!r}"
+                )
+            return options, target
+
+        if tok == "-" or not tok.startswith("-"):
+            # '-' (stdin) or a filename: the target begins here.
+            return options, args[i:]
+
+        if tok.startswith("--"):
+            if tok in LONG_WITH_ARG:
+                if i + 1 >= n:
+                    raise ValueError(f"Python option {tok} requires a value")
+                options.extend([tok, args[i + 1]])
+                i += 2
+                continue
+            if any(tok.startswith(name + "=") for name in LONG_WITH_ARG):
+                options.append(tok)
+                i += 1
+                continue
+            if tok in LONG_NO_ARG:
+                options.append(tok)
+                i += 1
+                continue
+            # Unknown long option: let build_command judge it as a target.
+            return options, args[i:]
+
+        # Short-option cluster: "-u", "-Es", "-Xfoo", "-Im", ...
+        j = 1
+        consumed_next_value = False
+        while j < len(tok):
+            c = tok[j]
+            if c in SHORT_NO_ARG:
+                j += 1
+                continue
+            if c in SHORT_WITH_ARG:
+                if j + 1 < len(tok):
+                    j = len(tok)          # attached value: -Xfoo
+                else:
+                    consumed_next_value = True  # value in next token: -X foo
+                    j = len(tok)
+                break
+            if c in SHORT_TARGET:
+                prefix = tok[1:j]
+                if prefix:
+                    options.append("-" + prefix)
+                target_flag = "-" + c
+                attached = tok[j + 1:]
+                if attached:
+                    return options, [target_flag, attached] + args[i + 1:]
+                return options, [target_flag] + args[i + 1:]
+            # Unknown short flag: let build_command judge it as a target.
+            return options, args[i:]
+
+        options.append(tok)
+        i += 1
+        if consumed_next_value:
+            if i >= n:
+                raise ValueError(f"Python option {tok} requires a value")
+            options.append(args[i])
+            i += 1
+
+    return options, []
+
+
+def build_command(args, host, port, wait):
+    """Build the full argv that runs `args` under debugpy. Never executes."""
+    python_index = find_python_index(args)
+    prefix = args[:python_index]
+    python = args[python_index]
+    python_options, target = split_python_options(args[python_index + 1:])
+
+    if not target:
+        raise ValueError(
+            "no target to debug (interactive interpreter); specify a script, "
+            "-m <module>, or -c <code>"
+        )
+
+    first = target[0]
+    if first == "-":
+        raise ValueError("debugpy cannot debug a script read from stdin ('-')")
+    if first.startswith("-"):
+        if first in {"-m", "-c"}:
+            if len(target) < 2:
+                raise ValueError(f"Python option {first} requires a value")
+        else:
+            raise ValueError(
+                f"unsupported Python target {first!r}; debugpy supports a file, "
+                "-m <module>, or -c <code>"
+            )
+
+    if target[:2] == ["-m", "debugpy"]:
+        raise ValueError("the command already launches debugpy")
+
+    debugger_options = ["-m", "debugpy", "--listen", f"{host}:{port}"]
+    if wait:
+        debugger_options.append("--wait-for-client")
+
+    return prefix + [python] + python_options + debugger_options + target
+
+
+def interpreter_invocation(command):
+    """Return the launcher + interpreter + interpreter-options portion of a
+    command built by build_command, i.e. everything before the injected
+    `-m debugpy`. Running this with a target of our own probes the exact
+    environment debugpy will run in.
+    """
+    for i in range(len(command) - 1):
+        if command[i] == "-m" and command[i + 1] == "debugpy":
+            return command[:i]
+    return list(command)
+
+
+def debugpy_available(interpreter_cmd):
+    """Probe whether debugpy is importable by the target interpreter.
+
+    Returns True/False, or None if the probe could not be run (launcher missing
+    or timed out), in which case the caller should fall through to exec rather
+    than block on an inconclusive result.
+    """
+    probe = interpreter_cmd + ["-c", DEBUGPY_PROBE]
+    try:
+        result = subprocess.run(
+            probe,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=CHECK_TIMEOUT_SECONDS,
+        )
+    except (FileNotFoundError, PermissionError, subprocess.TimeoutExpired):
+        return None
+    return result.returncode == 0
+
+
+def _launcher_and_python(interpreter_cmd):
+    for i, tok in enumerate(interpreter_cmd):
+        if is_python_executable(tok):
+            return interpreter_cmd[:i], tok
+    fallback = interpreter_cmd[0] if interpreter_cmd else "python"
+    return [], fallback
+
+
+def install_instructions(interpreter_cmd):
+    """Launcher-specific guidance for installing debugpy into the target env."""
+    launcher, python = _launcher_and_python(interpreter_cmd)
+    name = os.path.basename(launcher[0]) if launcher else ""
+    header = "debugpy is not installed in the target environment."
+
+    if name == "uv":
+        return (
+            f"{header}\n"
+            "Install it with one of:\n"
+            "  - ephemeral, no project changes -- add '--with debugpy' after "
+            "'uv run', e.g.\n"
+            "      debugpy uv run --with debugpy python ...\n"
+            "  - as a project dev dependency:\n"
+            "      uv add --dev debugpy"
+        )
+    if name == "poetry":
+        return (
+            f"{header}\n"
+            "Install it with:\n"
+            "      poetry add --group dev debugpy"
+        )
+    if name == "pipenv":
+        return (
+            f"{header}\n"
+            "Install it with:\n"
+            "      pipenv install --dev debugpy"
+        )
+
+    q = shlex.quote(python)
+    return (
+        f"{header}\n"
+        "Install it with:\n"
+        f"      {q} -m pip install debugpy\n"
+        "If that interpreter is system-wide / externally managed (PEP 668), pip\n"
+        "will refuse; use an isolated environment instead, e.g.\n"
+        f"      {q} -m venv .venv && .venv/bin/python -m pip install debugpy\n"
+        "      debugpy .venv/bin/python <your script>\n"
+        "  (or: pipx install debugpy, or: debugpy uv run --with debugpy python ...)"
+    )
+
+
+def main(argv):
+    try:
+        host, port, wait, dry_run, skip_check, command_args = parse_wrapper_options(
+            argv
+        )
+        if not command_args:
+            usage()
+            return 2
+        command = build_command(command_args, host, port, wait)
+    except ValueError as error:
+        print(f"debugpy: {error}", file=sys.stderr)
+        return 2
+
+    if not dry_run and not skip_check:
+        interpreter_cmd = interpreter_invocation(command)
+        if debugpy_available(interpreter_cmd) is False:
+            print(f"debugpy: {install_instructions(interpreter_cmd)}", file=sys.stderr)
+            print("  (bypass this check with --no-check)", file=sys.stderr)
+            return 3
+
+    suffix = " (waiting for client)" if wait else ""
+    print(f"debugpy: listening on {host}:{port}{suffix}", file=sys.stderr)
+    print(f"+ {shlex.join(command)}", file=sys.stderr)
+    if dry_run:
+        return 0
+
+    try:
+        os.execvp(command[0], command)
+    except FileNotFoundError:
+        print(f"debugpy: command not found: {command[0]}", file=sys.stderr)
+        return 127
+    except PermissionError:
+        print(f"debugpy: cannot execute: {command[0]}", file=sys.stderr)
+        return 126
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
