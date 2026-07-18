@@ -130,9 +130,11 @@ show_bin() {
 
     subsection "Python"
     cmd "pyclean [dir]" "Remove .venv, __pycache__, .pyc"
+    cmd "debugpy <cmd>" "Run Python under debugpy, wait for IDE attach"
 
     subsection "Data Utilities"
     cmd "pq [file]" "Convert Python literals to JSON"
+    cmd "toml2json [in] [out]" "Convert TOML to JSON"
     cmd "sumcol [col]" "Sum numeric column from stdin"
     cmd "dotenv-export [file]" "Export .env as shell commands"
 

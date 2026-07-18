@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+# Exit immediately if a command exits with a non-zero status
+set -e
+
+# Help message
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: toml2json [input.toml] [output.json]"
+    echo "       toml2json < input.toml > output.json"
+    exit 0
+fi
+
+# Detect if input is a file or stdin
+INPUT_FILE="${1:-/dev/stdin}"
+OUTPUT_FILE="${2:-/dev/stdout}"
+
+# Check if input file exists when not reading from stdin
+if [[ "$INPUT_FILE" != "/dev/stdin" && ! -f "$INPUT_FILE" ]]; then
+    echo "Error: Input file '$INPUT_FILE' not found." >&2
+    exit 1
+fi
+
+# Inline Python execution script
+python3 -c '
+import sys
+import json
+
+content = sys.stdin.read()
+
+try:
+    # Try Python 3.11+ native library first
+    import tomllib
+    data = tomllib.loads(content)
+except ImportError:
+    try:
+        # Fallback to third-party library for older Python versions
+        import toml
+        data = toml.loads(content)
+    except ImportError:
+        sys.stderr.write("Error: Python 3.11+ is required, OR run '\''pip install toml'\'' for older versions.\n")
+        sys.exit(1)
+except Exception as e:
+    sys.stderr.write(f"Error parsing TOML: {e}\n")
+    sys.exit(1)
+
+print(json.dumps(data, indent=2))
+' < "$INPUT_FILE" > "$OUTPUT_FILE"
