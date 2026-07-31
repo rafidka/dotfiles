@@ -143,6 +143,9 @@ show_bin() {
 
     subsection "Cloud"
     cmd "gsget <gs://path>" "Download from Google Cloud Storage"
+
+    subsection "Security"
+    cmd "gpg-unlock-all" "Unlock all GPG signing keys for Git signing"
 }
 
 show_git() {
@@ -165,6 +168,7 @@ show_git() {
 
     subsection "Tools"
     cmd "lgit" "lazygit"
+    cmd "gpg-unlock-all" "Unlock all GPG signing keys for Git signing"
 }
 
 show_docker() {

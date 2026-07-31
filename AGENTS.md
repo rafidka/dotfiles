@@ -362,3 +362,4 @@ fi
 | `dotenv-export [file]` | Export .env as shell commands |
 | `topspace [N] [path]` | List N largest files/dirs |
 | `gsget <gs://path>` | Download from Google Cloud Storage |
+| `gpg-unlock-all` | Unlock all GPG signing keys for Git signing |

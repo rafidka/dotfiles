@@ -1,0 +1,92 @@
+#!/bin/bash
+set -euo pipefail
+
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Unlock all secret GPG signing keys by warming the gpg-agent cache.
+
+Options:
+    -h, --help    Show this help message and exit
+
+The script asks gpg-agent to refresh its startup TTY, then creates and
+discards a cleartext signature with each secret key. Pinentry prompts for
+any passphrases that are not already cached. The keys remain available for
+Git and other signing operations until the agent cache expires.
+
+Exit status is nonzero if key discovery fails, no secret keys are found,
+or any signing key cannot be unlocked.
+EOF
+}
+
+case "${1:-}" in
+    -h|--help)
+        show_help
+        exit 0
+        ;;
+    "")
+        ;;
+    *)
+        echo "Error: Unknown option or argument: $1" >&2
+        echo "Use --help for usage information." >&2
+        exit 1
+        ;;
+esac
+
+for command_name in gpg gpg-connect-agent; do
+    if ! command -v "$command_name" &>/dev/null; then
+        echo "Error: $command_name is not installed or not in PATH." >&2
+        exit 1
+    fi
+done
+
+if [[ ! -t 0 ]]; then
+    echo "Error: A terminal is required for GPG pinentry." >&2
+    exit 1
+fi
+
+export GPG_TTY
+GPG_TTY="$(tty)"
+gpg-connect-agent updatestartuptty /bye >/dev/null
+
+if ! key_output=$(
+    gpg --batch --with-colons --list-secret-keys |
+        awk -F: '
+            $1 == "sec" { want_fingerprint = 1; next }
+            want_fingerprint && $1 == "fpr" {
+                print $10
+                want_fingerprint = 0
+            }
+        '
+); then
+    echo "Error: Failed to list secret GPG keys." >&2
+    exit 1
+fi
+
+if [[ -z "$key_output" ]]; then
+    echo "No secret GPG keys found." >&2
+    exit 1
+fi
+
+mapfile -t key_fingerprints <<< "$key_output"
+failed=0
+
+for fingerprint in "${key_fingerprints[@]}"; do
+    echo "Unlocking GPG key: $fingerprint"
+
+    if printf 'Unlock GPG key %s\n' "$fingerprint" |
+        gpg \
+            --batch \
+            --local-user "$fingerprint" \
+            --clear-sign \
+            --output /dev/null
+    then
+        echo "Unlocked: $fingerprint"
+    else
+        echo "Failed to unlock: $fingerprint" >&2
+        failed=1
+    fi
+done
+
+exit "$failed"

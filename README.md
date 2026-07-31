@@ -86,6 +86,13 @@ The configuration activates automatically when you open a new terminal. Key feat
 | `extract <file>` | Extract various archive formats |
 | `gco` | Fuzzy checkout git branch |
 
+#### GPG Signing
+
+Run `gpg-unlock-all` to unlock every secret GPG signing key for Git and other
+signing operations. The command uses pinentry for uncached passphrases and
+warms the `gpg-agent` cache until its configured timeout expires. Run
+`gpg-unlock-all --help` for detailed behavior and exit-status information.
+
 ### Vim
 
 Key mappings (Space is the leader key):
@@ -133,6 +140,7 @@ After installation, add language servers for your languages:
 - Zsh (as your default shell)
 - Git
 - curl
+- GnuPG 2.x (for `gpg-unlock-all`)
 - Vim 8.0+ or Neovim
 - [Nerd Font](https://www.nerdfonts.com/) (for icons in Vim/terminal)
 
