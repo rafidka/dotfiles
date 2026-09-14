@@ -257,6 +257,10 @@ fi
 - **diffview.nvim** - Git diff viewer
 - **persistence.nvim** - Session management (auto-save/restore)
 - **bufferline.nvim** - Tab bar with buffer management
+- **avante.nvim** - AI assistant sidebar, driven by opencode over ACP (Neovim 0.12+ only)
+- **nui.nvim** - UI component library (required by avante)
+- **render-markdown.nvim** - Renders markdown in the avante sidebar
+- **img-clip.nvim** - Paste images into avante prompts
 
 ### Vim Key Mappings (Leader = Space)
 
@@ -288,6 +292,7 @@ fi
 | `<Space>ca` | Code action |
 | `<Space>cd` | Line diagnostics |
 | `<Space>ci` | Organize imports |
+| `<Space>cp` | Run autopep8 (vim only) |
 | **Git (`<Space>g`)** | |
 | `<Space>gg` | Open LazyGit (neovim) |
 | `<Space>gd` | Open diff view (neovim) |
@@ -324,11 +329,23 @@ fi
 | `<Space>ql` | Restore last session |
 | `<Space>qS` | Save session |
 | `<Space>qd` | Don't save session |
+| **AI (`<Space>a`, neovim 0.12+)** | |
+| `<Space>aa` | Ask avante |
+| `<Space>at` | Toggle avante sidebar |
+| `<Space>af` | Focus avante sidebar |
+| `<Space>ar` | Refresh avante sidebar |
+| `<Space>an` | New avante chat |
+| `<Space>ah` | Select chat history |
+| `<Space>aS` | Stop current request |
+| `<Space>ac` | Add current buffer to context (in sidebar) |
+| `<Space>aB` | Add all buffers to context (in sidebar) |
+| `<Space>aM` | Select agent model |
+| `<Space>am` | Select agent mode |
 | **Quick Actions** | |
 | `<Space>w` / `q` / `x` | Save / Quit / Save+Quit |
 | `<Space>/` | Clear highlight (vim) / Search in buffer (neovim) |
 | `<Space>y` / `p` / `P` | System clipboard yank/paste |
-| `<Space>ap` | Run autopep8 |
+| `<Space>cp` | Run autopep8 (vim only) |
 | **Navigation** | |
 | `[d` / `]d` | Previous/next diagnostic (neovim) |
 | `gd` | Go to definition (neovim LSP) |

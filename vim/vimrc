@@ -27,6 +27,7 @@ Plug 'tpope/vim-surround'
 if has('nvim') && !exists('g:vscode')
     " Check Neovim version for modern plugins
     let s:has_nvim_011 = has('nvim-0.11')
+    let s:has_nvim_012 = has('nvim-0.12')
     
     " Always load these plugins (compatible with older Neovim)
     " Colorscheme (treesitter-aware)
@@ -74,6 +75,18 @@ if has('nvim') && !exists('g:vscode')
         " Snippets (required for nvim-cmp)
         Plug 'L3MON4D3/LuaSnip'
         Plug 'saadparwaiz1/cmp_luasnip'
+
+        " AI assistant (avante.nvim, driven by opencode over ACP)
+        " Guarded on 0.12: avante force-quits Neovim on older versions.
+        " The build fetches the prebuilt Rust library and is NOT optional (ACP
+        " mode needs avante_templates for the system prompt). Invoked via bash
+        " because upstream commits build.sh without the executable bit.
+        if s:has_nvim_012
+            Plug 'MunifTanjim/nui.nvim'
+            Plug 'MeanderingProgrammer/render-markdown.nvim'
+            Plug 'HakonHarnes/img-clip.nvim'
+            Plug 'avante-corp/avante.nvim', { 'branch': 'main', 'do': 'bash ./build.sh' }
+        endif
     else
         echomsg 'Neovim < 0.11 detected. Skipping: telescope, treesitter, LSP, completion.'
         echomsg 'Install Neovim 0.11+ for full functionality.'
@@ -250,7 +263,7 @@ if !exists('g:vscode')
     " Autopep8
     let g:autopep8_max_line_length = 88
     let g:autopep8_disable_show_diff = 1
-    nnoremap <Leader>ap :Autopep8<CR>
+    nnoremap <Leader>cp :Autopep8<CR>
 
     " --- Cursor Shape ---
     if has('nvim')
@@ -296,8 +309,8 @@ if !exists('g:vscode')
     let g:which_key_map.P = 'clipboard paste before'
 
     " Autopep8
-    let g:which_key_map.a = {
-        \ 'name': '+actions',
+    let g:which_key_map.c = {
+        \ 'name': '+code',
         \ 'p': 'autopep8 format',
         \ }
 
@@ -334,7 +347,7 @@ if !exists('g:vscode')
             \ ['q',   'Quit',                    ':q'],
             \ ['x',   'Save and quit',           ':x'],
             \ ['/',   'Clear search highlight',  ':nohlsearch'],
-            \ ['ap',  'Autopep8 format',         ':Autopep8'],
+            \ ['cp',  'Autopep8 format',         ':Autopep8'],
             \ ]
 
         function! s:shortcuts_sink(line)

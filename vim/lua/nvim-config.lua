@@ -10,6 +10,7 @@ end
 -- Check Neovim version
 local nvim_version = vim.version()
 local has_nvim_011 = nvim_version.major > 0 or (nvim_version.major == 0 and nvim_version.minor >= 11)
+local has_nvim_012 = nvim_version.major > 0 or (nvim_version.major == 0 and nvim_version.minor >= 12)
 
 if not has_nvim_011 then
     vim.notify(
@@ -200,11 +201,20 @@ if has_nvim_011 and plugin_loaded('telescope') then
         { key = 'ut',  desc = '[ui] Toggle treesitter highlight',  cmd = 'lua if vim.b.ts_highlight then vim.treesitter.stop() else vim.treesitter.start() end; vim.b.ts_highlight = not vim.b.ts_highlight' },
         -- Buffer/Search
         { key = '/',   desc = '[search] Fuzzy search in buffer',   cmd = 'Telescope current_buffer_fuzzy_find' },
+        -- AI (avante, backed by opencode over ACP)
+        { key = 'aa',  desc = '[ai] Ask avante',                   cmd = 'AvanteAsk' },
+        { key = 'at',  desc = '[ai] Toggle avante sidebar',        cmd = 'AvanteToggle' },
+        { key = 'af',  desc = '[ai] Focus avante sidebar',         cmd = 'AvanteFocus' },
+        { key = 'an',  desc = '[ai] New avante chat',              cmd = 'AvanteChatNew' },
+        { key = 'ah',  desc = '[ai] Avante chat history',          cmd = 'AvanteHistory' },
+        { key = 'aS',  desc = '[ai] Stop avante request',          cmd = 'AvanteStop' },
+        { key = 'aM',  desc = '[ai] Select agent model',           cmd = 'AvanteACPModels' },
+        { key = 'am',  desc = '[ai] Select agent mode',            cmd = 'AvanteACPModes' },
         -- Quick actions
         { key = 'w',   desc = '[quick] Save file',                 cmd = 'w' },
         { key = 'q',   desc = '[quick] Quit window',               cmd = 'q' },
         { key = 'x',   desc = '[quick] Save and quit',             cmd = 'x' },
-        { key = 'ap',  desc = '[python] Autopep8 format',          cmd = 'Autopep8' },
+        { key = 'cp',  desc = '[python] Autopep8 format',          cmd = 'Autopep8' },
     }
 
     local function shortcut_picker()
@@ -308,7 +318,7 @@ if plugin_loaded('which-key') then
         { '<Leader>t', group = 'tabs' },
         { '<Leader>l', group = 'lsp' },
         { '<Leader>g', group = 'git' },
-        { '<Leader>a', group = 'actions' },
+        { '<Leader>a', group = 'ai' },
         { '<Leader>s', group = 'search' },
         { '<Leader>c', group = 'code' },
         { '<Leader>u', group = 'ui' },
@@ -397,6 +407,12 @@ if plugin_loaded('bufferline') then
                 {
                     filetype = 'NvimTree',
                     text = 'File Explorer',
+                    text_align = 'center',
+                    separator = true,
+                },
+                {
+                    filetype = 'Avante',
+                    text = 'Avante',
                     text_align = 'center',
                     separator = true,
                 },
@@ -739,6 +755,71 @@ if has_nvim_011 and plugin_loaded('cmp') then
         }, {
             { name = 'cmdline' },
         }),
+    })
+end
+
+--------------------------------------------------------------------------------
+-- Avante (AI assistant, driven by opencode over ACP)
+--------------------------------------------------------------------------------
+-- Requires Neovim 0.12+; avante force-quits older versions on load, so the
+-- plugin itself is also guarded in vimrc. Loaded after nvim-cmp so avante can
+-- register its '@' / '/' / '#' completion sources.
+if has_nvim_012 and plugin_loaded('avante') then
+    -- The avante sidebar can only collapse fully with a global statusline.
+    vim.opt.laststatus = 3
+
+    if plugin_loaded('render-markdown') then
+        require('render-markdown').setup({
+            file_types = { 'markdown', 'Avante' },
+        })
+    end
+
+    if plugin_loaded('img-clip') then
+        require('img-clip').setup({
+            default = {
+                embed_image_as_base64 = false,
+                prompt_for_file_name = false,
+                drag_and_drop = {
+                    insert_mode = true,
+                },
+            },
+        })
+    end
+
+    require('avante').setup({
+        -- 'opencode' is a built-in ACP provider; avante resolves it by looking
+        -- the name up in acp_providers before its own LLM provider table, so no
+        -- API key is requested at startup.
+        provider = 'opencode',
+        acp_providers = {
+            opencode = {
+                command = 'opencode',
+                args = { 'acp' },
+                -- avante builds the child environment from scratch rather than
+                -- inheriting ours, passing only PATH plus whatever is listed
+                -- here. opencode does survive without HOME (Node falls back to
+                -- the passwd database), but pass it explicitly so config and
+                -- credentials resolve exactly as they do in a terminal.
+                env = {
+                    HOME = os.getenv('HOME'),
+                    PATH = os.getenv('PATH'),
+                    XDG_CONFIG_HOME = os.getenv('XDG_CONFIG_HOME'),
+                    XDG_DATA_HOME = os.getenv('XDG_DATA_HOME'),
+                },
+            },
+        },
+        behaviour = {
+            -- Inline suggestions resolve the provider through avante's LLM
+            -- table, which errors for an ACP provider name. Keep disabled.
+            auto_suggestions = false,
+            -- Always reports 0 under ACP.
+            enable_token_counting = false,
+            -- Follow the agent to files and lines as it edits them.
+            acp_follow_agent_locations = true,
+        },
+        selector = {
+            provider = 'telescope',
+        },
     })
 end
 
