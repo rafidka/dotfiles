@@ -50,7 +50,7 @@ fi
 # --- Utilities ---
 alias cls='clear'
 command -v docker &>/dev/null && alias d='docker'
-command -v timg &>/dev/null && alias icat='timg'
+command -v timg &>/dev/null && alias icat='timg -pi'
 command -v ipython &>/dev/null && alias ipy='ipython'
 command -v lazygit &>/dev/null && alias lgit='lazygit'
 command -v openssl &>/dev/null && alias newpass='openssl rand -base64 32'
