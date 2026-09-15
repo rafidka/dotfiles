@@ -36,7 +36,7 @@ extract() {
     esac
 }
 
-# Search file contents with fzf and open in vim
+# Search file contents with fzf and open in nvim
 fzf_search_content() {
     if ! command -v fzf &> /dev/null; then
         echo "fzf is not installed" >&2
@@ -51,7 +51,7 @@ fzf_search_content() {
     fi
 
     if [[ -n "$file" ]]; then
-        ${EDITOR:-vim} "$file" "+$line"
+        ${EDITOR:-nvim} "$file" "+$line"
     fi
 }
 

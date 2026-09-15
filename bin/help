@@ -93,7 +93,7 @@ show_aliases() {
 
     subsection "Quick Edit"
     cmd "zshrc" "Edit ~/.zshrc"
-    cmd "vimrc" "Edit vim config"
+    cmd "nvimrc" "Edit neovim config"
     cmd "localrc" "Edit local.zsh"
     cmd "reload" "Reload shell config"
 
@@ -109,7 +109,7 @@ show_functions() {
     cmd "mkcd <dir>" "Create directory and cd into it"
     cmd "t" "cd to ~/temp (creates if needed)"
     cmd "extract <file>" "Extract archives (.tar.gz, .zip, etc.)"
-    cmd "fzf_search_content" "Search file contents, open in vim"
+    cmd "fzf_search_content" "Search file contents, open in nvim"
 }
 
 show_bin() {

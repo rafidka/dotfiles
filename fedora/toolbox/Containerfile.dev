@@ -9,7 +9,6 @@ RUN dnf -y install \
   nvim \
   sensors \
   timg \
-  vim \
   zoxide \
   zsh \
   && dnf clean all

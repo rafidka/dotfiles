@@ -40,7 +40,7 @@ else
     alias topcpu='ps aux --sort=-%cpu | head -20'
 fi
 
-# --- Neovim (prefer nvim over vim if available) ---
+# --- Neovim (these dotfiles are Neovim-only; route vim/vi at nvim) ---
 if command -v nvim &>/dev/null; then
     alias vim='nvim'
     alias vi='nvim'
@@ -80,9 +80,9 @@ if [[ "$(uname)" == "Linux" ]] && command -v xclip &> /dev/null; then
 fi
 
 # --- Quick edit ---
-alias zshrc='${EDITOR:-vim} ~/.zshrc'
-alias vimrc='${EDITOR:-vim} ${DOTFILES}/vim/vimrc'
-alias localrc='${EDITOR:-vim} ${DOTFILES}/zsh/local.zsh'
+alias zshrc='${EDITOR:-nvim} ~/.zshrc'
+alias nvimrc='${EDITOR:-nvim} ${DOTFILES}/nvim/init.lua'
+alias localrc='${EDITOR:-nvim} ${DOTFILES}/zsh/local.zsh'
 
 # --- Reload shell config ---
 alias reload='source ~/dotfiles/activate.sh'

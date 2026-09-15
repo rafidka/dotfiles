@@ -1,5 +1,5 @@
 -- nvim-config.lua - Neovim-specific configuration
--- This file is loaded only in Neovim (see vimrc)
+-- This file is loaded only in standalone Neovim (see init.lua)
 
 -- Check if running in VSCode
 if vim.g.vscode then
@@ -47,6 +47,8 @@ if plugin_loaded('catppuccin') then
             bufferline = true,
         },
     })
+
+    vim.cmd.colorscheme('catppuccin-mocha')
 end
 
 --------------------------------------------------------------------------------
@@ -214,7 +216,6 @@ if has_nvim_011 and plugin_loaded('telescope') then
         { key = 'w',   desc = '[quick] Save file',                 cmd = 'w' },
         { key = 'q',   desc = '[quick] Quit window',               cmd = 'q' },
         { key = 'x',   desc = '[quick] Save and quit',             cmd = 'x' },
-        { key = 'cp',  desc = '[python] Autopep8 format',          cmd = 'Autopep8' },
     }
 
     local function shortcut_picker()
@@ -244,7 +245,7 @@ if has_nvim_011 and plugin_loaded('telescope') then
         }):find()
     end
 
-    -- Keymaps (matching fzf.vim style)
+    -- Keymaps
     vim.keymap.set('n', '<Leader>ff', builtin.find_files, { desc = 'Find files' })
     vim.keymap.set('n', '<Leader>fg', builtin.git_files, { desc = 'Git files' })
     vim.keymap.set('n', '<Leader>fb', builtin.buffers, { desc = 'Buffers' })
@@ -762,7 +763,7 @@ end
 -- Avante (AI assistant, driven by opencode over ACP)
 --------------------------------------------------------------------------------
 -- Requires Neovim 0.12+; avante force-quits older versions on load, so the
--- plugin itself is also guarded in vimrc. Loaded after nvim-cmp so avante can
+-- plugin itself is also guarded in init.lua. Loaded after nvim-cmp so avante can
 -- register its '@' / '/' / '#' completion sources.
 if has_nvim_012 and plugin_loaded('avante') then
     -- The avante sidebar can only collapse fully with a global statusline.

@@ -27,7 +27,7 @@ if command -v bat &> /dev/null; then
     export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always --line-range :500 {}'"
 fi
 
-# Ctrl-F: Search file contents with ripgrep and fzf, open in vim
+# Ctrl-F: Search file contents with ripgrep and fzf, open in nvim
 fzf-rg-content-widget() {
     if ! command -v rg &> /dev/null; then
         zle -M "ripgrep (rg) is not installed"
@@ -47,7 +47,7 @@ fzf-rg-content-widget() {
     if [[ -n "$result" ]]; then
         file=$(echo "$result" | awk -F: '{print $1}')
         line=$(echo "$result" | awk -F: '{print $2}')
-        BUFFER="${EDITOR:-vim} ${(q)file} +$line"
+        BUFFER="${EDITOR:-nvim} ${(q)file} +$line"
         zle accept-line
         return
     fi
@@ -56,7 +56,7 @@ fzf-rg-content-widget() {
 zle -N fzf-rg-content-widget
 bindkey '^F' fzf-rg-content-widget
 
-# Ctrl-G: Fuzzy git status - select modified files to open in vim
+# Ctrl-G: Fuzzy git status - select modified files to open in nvim
 fzf-git-status-widget() {
     if ! git rev-parse --is-inside-work-tree &>/dev/null; then
         zle -M "Not in a git repository"
@@ -69,7 +69,7 @@ fzf-git-status-widget() {
         --preview-window 'right:60%' | awk '{print $2}')
 
     if [[ -n "$files" ]]; then
-        BUFFER="${EDITOR:-vim} ${files}"
+        BUFFER="${EDITOR:-nvim} ${files}"
         zle accept-line
         return
     fi

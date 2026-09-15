@@ -76,7 +76,7 @@ else
 fi
 
 # --- WezTerm Configuration ---
-echo "[4/5] Configuring WezTerm..."
+echo "[4/6] Configuring WezTerm..."
 WEZTERM_CONFIG="$HOME/.wezterm.lua"
 WEZTERM_WRAPPER='-- ~/.wezterm.lua - Thin wrapper that delegates to dotfiles config
 -- All real configuration lives in ~/dotfiles/wezterm/wezterm.lua
@@ -96,8 +96,32 @@ else
     echo "  - Created WezTerm wrapper at ~/.wezterm.lua"
 fi
 
+# --- Neovim Configuration ---
+echo "[5/6] Configuring Neovim..."
+NVIM_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+NVIM_CONFIG="$NVIM_CONFIG_DIR/init.lua"
+NVIM_WRAPPER="-- ~/.config/nvim/init.lua - Thin wrapper that delegates to dotfiles config
+-- All real configuration lives in ~/dotfiles/nvim/init.lua
+dofile(os.getenv(\"HOME\") .. \"/dotfiles/nvim/init.lua\")"
+
+mkdir -p "$NVIM_CONFIG_DIR"
+
+if [[ -f "$NVIM_CONFIG" ]]; then
+    if grep -q "dotfiles/nvim/init.lua" "$NVIM_CONFIG" 2>/dev/null; then
+        echo "  - Neovim wrapper already configured"
+    else
+        echo "  - Backing up existing init.lua to init.lua.bak"
+        cp "$NVIM_CONFIG" "${NVIM_CONFIG}.bak"
+        echo "$NVIM_WRAPPER" > "$NVIM_CONFIG"
+        echo "  - Created Neovim wrapper (old config backed up)"
+    fi
+else
+    echo "$NVIM_WRAPPER" > "$NVIM_CONFIG"
+    echo "  - Created Neovim wrapper at $NVIM_CONFIG"
+fi
+
 # --- Add activation to .zshrc ---
-echo "[5/5] Configuring .zshrc..."
+echo "[6/6] Configuring .zshrc..."
 ZSHRC="$HOME/.zshrc"
 ACTIVATION_LINE="source ~/dotfiles/activate.sh"
 
@@ -122,13 +146,19 @@ echo "========================================"
 echo ""
 echo "Next steps:"
 echo "  1. Restart your shell or run: source ~/.zshrc"
-echo "  2. Open vim and run :PlugInstall to install vim plugins"
-echo "     (vim-plug will be auto-installed on first vim launch)"
+echo "  2. Open nvim and run :PlugInstall to install plugins"
+echo "     (vim-plug will be auto-installed on first nvim launch)"
 echo ""
 echo "Optional: Create ~/dotfiles/zsh/local.zsh for machine-specific settings"
 
 # --- Check for optional tools ---
 MISSING_TOOLS=""
+
+if ! command -v nvim &>/dev/null; then
+    echo ""
+    echo -e "\033[1;31mNeovim not found.\033[0m These dotfiles are Neovim-only;"
+    echo "plain Vim is not supported. Install Neovim 0.11+ (0.12+ for the AI sidebar)."
+fi
 
 if ! command -v bat &>/dev/null && ! command -v batcat &>/dev/null; then
     MISSING_TOOLS="$MISSING_TOOLS bat"
@@ -148,7 +178,7 @@ if [[ -n "$MISSING_TOOLS" ]]; then
     echo "Some aliases depend on these tools. Install them for full functionality."
 fi
 echo ""
-echo "Note: Vim configuration uses VIMINIT environment variable."
-echo "      WezTerm configuration uses a thin wrapper at ~/.wezterm.lua."
+echo "Note: Neovim and WezTerm configuration use thin wrappers at"
+echo "      ~/.config/nvim/init.lua and ~/.wezterm.lua."
 echo "      No symlinks are needed - everything is self-contained in ~/dotfiles."
 echo ""

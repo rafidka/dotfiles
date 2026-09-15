@@ -1,7 +1,8 @@
 # AGENTS.md - Guide for AI Coding Agents
 
-Personal dotfiles for Zsh and Vim. Clone to `~/dotfiles` and activate via
+Personal dotfiles for Zsh and Neovim. Clone to `~/dotfiles` and activate via
 `source ~/dotfiles/activate.sh` in `.zshrc`. **Zsh-only**, no bash support.
+**Neovim-only**, no plain Vim support.
 
 ## Validation Commands
 
@@ -11,7 +12,8 @@ bash -n bin/<script>
 zsh -n activate.sh              # Check zsh file syntax
 zsh -n zsh/*.zsh
 reload                          # Reload config (or: source ~/dotfiles/activate.sh)
-vim -u vim/vimrc +PlugStatus +qall  # Test vim config
+nvim --headless +PlugStatus +qall   # Test Neovim plugin state
+nvim --headless +"checkhealth" +qall
 ```
 
 ## Directory Structure
@@ -25,16 +27,17 @@ fedora/              # Fedora-specific tools (only loaded on Fedora)
   toolbox/           # Toolbox container definitions
 zsh/
   init.zsh           # Sources modules in order
-  path.zsh           # PATH, EDITOR, VIMINIT
+  path.zsh           # PATH, EDITOR
   fedora.zsh         # Fedora-specific config (sourced on Fedora only)
   aliases.zsh        # Shell aliases
   functions.zsh      # Shell functions
   local.zsh          # Machine-specific (gitignored)
-vim/
-  vimrc              # Main vim config (shared vim/neovim)
-  lua/               # Neovim-specific Lua config
-    nvim-config.lua  # Treesitter, LSP, completion setup
-  after/ftplugin/    # Filetype-specific settings
+nvim/
+  init.lua           # Entry point: runtimepath, vim-plug, options, keymaps
+  lua/
+    nvim-config.lua        # Plugin setup, LSP, completion, avante
+    nvim-config-vscode.lua # Minimal config for the VSCode extension
+  after/ftplugin/    # Filetype-specific settings (.vim, read by Neovim)
 ```
 
 ## Activation Flow
@@ -45,7 +48,7 @@ vim/
         ├─> Check $ZSH_VERSION (error + return 1 if not zsh)
         ├─> Set DOTFILES="${0:A:h}"
         └─> source zsh/init.zsh
-              ├─> path.zsh      (PATH, EDITOR, VIMINIT)
+              ├─> path.zsh      (PATH, EDITOR)
               ├─> oh-my-zsh.zsh (framework, theme, plugins)
               ├─> history.zsh   (history settings)
               ├─> fzf.zsh       (fuzzy finder)
@@ -55,17 +58,38 @@ vim/
               └─> local.zsh     (if exists)
 ```
 
-## How Vim Works (No Symlinks)
+## How Neovim Works (No Symlinks)
 
-1. `zsh/path.zsh` sets `VIMINIT="source ${DOTFILES}/vim/vimrc"`
-2. Vim reads `VIMINIT` and sources our vimrc
-3. `vim/vimrc` uses `expand('<sfile>:p:h')` to find its directory
-4. Sets `runtimepath` to include our vim directory
+`install.sh` writes a three-line wrapper to `~/.config/nvim/init.lua` that
+`dofile()`s our real config — the same pattern used for `~/.wezterm.lua`:
 
-```vim
-let s:vimdir = expand('<sfile>:p:h')
-execute 'set runtimepath^=' . s:vimdir
-execute 'set runtimepath+=' . s:vimdir . '/after'
+```lua
+dofile(os.getenv("HOME") .. "/dotfiles/nvim/init.lua")
+```
+
+`nvim/init.lua` then locates itself and registers our directory on the
+runtimepath, so `after/ftplugin/` and `lua/` are found:
+
+```lua
+local nvim_dir = vim.fn.fnamemodify(debug.getinfo(1, 'S').source:sub(2), ':p:h')
+vim.opt.runtimepath:prepend(nvim_dir)
+vim.opt.runtimepath:append(nvim_dir .. '/after')
+package.path = nvim_dir .. '/lua/?.lua;' .. package.path
+```
+
+This deliberately avoids `VIMINIT`: that variable is also honoured by plain
+Vim, which cannot parse a Lua config, so a global `VIMINIT` would break every
+direct `vim` invocation. `~/.config/nvim/` is read by Neovim only.
+
+The wrapper is therefore load-bearing: on a machine where `install.sh` has
+never run, Neovim starts with **no configuration at all** and looks broken in a
+way unrelated to anything in `nvim/`. Sourcing `activate.sh` is not enough —
+nothing in the zsh path creates the wrapper. To check or recreate it by hand:
+
+```bash
+cat ~/.config/nvim/init.lua          # should dofile ~/dotfiles/nvim/init.lua
+mkdir -p ~/.config/nvim
+printf 'dofile(os.getenv("HOME") .. "/dotfiles/nvim/init.lua")\n' > ~/.config/nvim/init.lua
 ```
 
 ## Code Style
@@ -141,15 +165,29 @@ if __name__ == '__main__':
 - Type hints: `def func(data: str) -> str:`
 - Errors to stderr: `print("Error: ...", file=sys.stderr)`
 
-### Vim Config (vim/vimrc, vim/after/ftplugin/*.vim)
+### Neovim Config (nvim/init.lua, nvim/lua/*.lua)
 
-```vim
-" Description
-let s:vimdir = expand('<sfile>:p:h')  " s: prefix for script-local
-set option=value
+Lua, 4-space indent, single-quoted strings, 80-column section banners:
+
+```lua
+--------------------------------------------------------------------------------
+-- Section Name
+--------------------------------------------------------------------------------
+if has_nvim_011 and plugin_loaded('telescope') then
+    require('telescope').setup({})
+    vim.keymap.set('n', '<Leader>ff', builtin.find_files, { desc = 'Find files' })
+end
 ```
 
-Filetype plugins use `setlocal`:
+**Patterns:**
+- Guard every plugin block with `plugin_loaded('<require-name>')`, and add
+  `has_nvim_011` / `has_nvim_012` when the plugin needs a newer Neovim
+- Keymaps go immediately after the corresponding `setup()`, never in a central
+  list, and always carry a `desc` (which-key and `<Space>fk` read it)
+- Command-string keymaps take `silent = true`; function keymaps omit it
+
+Filetype plugins stay Vimscript (`nvim/after/ftplugin/*.vim`) and use
+`setlocal`:
 ```vim
 setlocal textwidth=88
 setlocal expandtab tabstop=4
@@ -164,7 +202,7 @@ setlocal expandtab tabstop=4
 | Shell functions | lowercase_underscores | `path_prepend` |
 | Shell variables | UPPER_SNAKE | `DOTFILES` |
 | Local variables | lowercase | `local tmpdir` |
-| Vim script-local | s: prefix | `s:vimdir` |
+| Lua locals | lowercase_underscores | `local nvim_dir` |
 
 ## Error Handling
 
@@ -182,17 +220,60 @@ command -v docker &>/dev/null || { echo "Error: Docker not found" >&2; exit 1; }
 **New alias:** Edit `zsh/aliases.zsh`, add under appropriate section
 **New function:** Edit `zsh/functions.zsh`, add brief comment above
 **New bin script:** Create in `bin/`, include `show_help()`, support `-h/--help`
-**New vim plugin:** Add `Plug 'author/plugin'` in `vim/vimrc`
-**New filetype:** Create `vim/after/ftplugin/<type>.vim` with `setlocal`
+**New Neovim plugin:** Add `Plug('author/plugin')` in `nvim/init.lua`, then a
+guarded setup block in `nvim/lua/nvim-config.lua`
+**New filetype:** Create `nvim/after/ftplugin/<type>.vim` with `setlocal`
 **New Fedora tool:** Create in `fedora/bin/` or `fedora/toolbox/`
 
 ## Constraints
 
 - **Zsh-only**: Guard in activate.sh rejects other shells
-- **No symlinks**: Vim uses `VIMINIT` env var, not `~/.vimrc`
+- **Neovim-only**: No plain Vim support; `vim`/`vi` are aliased to `nvim`
+- **No symlinks**: `~/.config/nvim/init.lua` is a wrapper that `dofile()`s ours
 - **Self-contained**: All files in `~/dotfiles/`
 - **local.zsh gitignored**: Machine-specific settings go there
 - **Use return not exit**: In sourced files, `exit` closes the shell
+- **install.sh required per machine**: Only it creates the Neovim and WezTerm
+  wrappers; cloning plus `activate.sh` gives you a working shell but an
+  unconfigured editor
+
+## Known Issues
+
+Pre-existing rough edges. Each is deliberate or unfixed, not an oversight —
+check here before "fixing" one.
+
+### install.sh aborts when `$ZSH` is exported
+
+Step 1 shells out to the Oh-My-Zsh installer, which refuses to run when `$ZSH`
+already points at an existing install, and `set -e` turns that into a hard exit.
+Since our shell config exports `ZSH`, re-running `install.sh` from a configured
+shell never reaches the later steps — including the Neovim wrapper. Work around
+it with `ZSH= ./install.sh`, or create the wrapper by hand (see *How Neovim
+Works*).
+
+### Avante is degraded under an ACP provider
+
+`provider = 'opencode'` is an ACP provider, and several avante features resolve
+the provider through its own LLM table, which has no entry for an ACP name:
+
+- **`/compact` errors** with `Failed to find provider: opencode`. Auto-compaction
+  hits the same path, so long chats break too — start a new chat (`<Space>an`)
+  instead. Fixing it means setting `memory_summary_provider` to a real LLM
+  provider, which reintroduces an API key.
+- **`auto_suggestions` must stay `false`** and **`enable_token_counting` stays
+  `false`** (counts always read 0). Both are set explicitly in
+  `nvim/lua/nvim-config.lua` for this reason.
+- **Avante's own tooling is inert**: Fast Apply, the RAG service, its MCP
+  integration, `auto_approve_tool_permissions` and the diff/apply workflow all
+  route through a tool list the ACP path never sends. opencode's own tools and
+  permission prompts do the work instead. Avoid `<Space>as` and `<Space>aR`.
+
+### avante's build.sh is not executable upstream
+
+Committed mode 644, so the documented `'do': './build.sh'` hook always fails
+with `Permission denied`. `nvim/init.lua` invokes it as `bash ./build.sh`. The
+prebuilt Rust library it fetches is mandatory: ACP mode needs `avante_templates`
+for the system prompt and dies on the first message without it.
 
 ## Cross-Platform
 
@@ -228,57 +309,56 @@ fi
 | Variable | Description |
 |----------|-------------|
 | `DOTFILES` | Absolute path to dotfiles directory |
-| `VIMINIT` | Tells vim to source our vimrc |
 | `ZSH` | Path to oh-my-zsh (`~/.oh-my-zsh`) |
-| `EDITOR` | Default editor (vim) |
+| `EDITOR` | Default editor (nvim) |
+| `VISUAL` | Default visual editor (nvim) |
 
-### Vim Plugins
+### Neovim Plugins
 
-- **vim-code-dark** - VSCode-like colorscheme
-- **vim-airline** - Status line (vim-only)
-- **fzf.vim** - Fuzzy finder integration (vim-only)
-- **python-syntax** - Enhanced Python highlighting
-- **vim-commentary**, **vim-surround**, **vim-fugitive** - Utilities
-- **vim-autopep8** - Python formatting
-- **vim-gitgutter** - Git diff in gutter
-- **vim-which-key** - Shows available keybindings popup (vim-only)
+Loaded everywhere, including inside the VSCode extension:
+- **vim-commentary**, **vim-surround** - Editing utilities
 
-**Neovim-only plugins:**
+Standalone Neovim only:
+- **catppuccin** - Colorscheme (treesitter-aware, mocha flavour)
 - **nvim-tree** - File explorer sidebar
 - **nvim-web-devicons** - File icons
-- **nvim-treesitter** - Better syntax highlighting
-- **nvim-lspconfig** - LSP configuration
-- **nvim-cmp** - Autocompletion (with buffer, path, cmdline sources)
-- **LuaSnip** - Snippet engine
-- **telescope.nvim** - Fuzzy finder (replaces fzf.vim)
-- **lualine.nvim** - Statusline (replaces vim-airline)
-- **which-key.nvim** - Keybinding helper (replaces vim-which-key)
+- **lualine.nvim** - Statusline
+- **which-key.nvim** - Keybinding helper
+- **bufferline.nvim** - Tab bar with buffer management
 - **lazygit.nvim** - LazyGit integration
 - **diffview.nvim** - Git diff viewer
 - **persistence.nvim** - Session management (auto-save/restore)
-- **bufferline.nvim** - Tab bar with buffer management
-- **avante.nvim** - AI assistant sidebar, driven by opencode over ACP (Neovim 0.12+ only)
+
+Requires Neovim 0.11+:
+- **telescope.nvim** + **plenary.nvim** - Fuzzy finder
+- **nvim-treesitter** - Better syntax highlighting
+- **nvim-lspconfig** - LSP configuration
+- **nvim-cmp** (+ cmp-nvim-lsp, cmp-buffer, cmp-path, cmp-cmdline) - Completion
+- **LuaSnip** + **cmp_luasnip** - Snippets (required by nvim-cmp)
+
+Requires Neovim 0.12+:
+- **avante.nvim** - AI assistant sidebar, driven by opencode over ACP
 - **nui.nvim** - UI component library (required by avante)
 - **render-markdown.nvim** - Renders markdown in the avante sidebar
 - **img-clip.nvim** - Paste images into avante prompts
 
-### Vim Key Mappings (Leader = Space)
+### Key Mappings (Leader = Space)
 
 | Mapping | Action |
 |---------|--------|
 | `<Space>` | Show which-key popup (wait 500ms) |
-| `<Space><Space>` | Shortcut picker (FZF in vim, Telescope in neovim) |
+| `<Space><Space>` | Shortcut picker (Telescope) |
 | **File/Find (`<Space>f`)** | |
 | `<Space>ff` | Find files |
 | `<Space>fc` | Find in files (ripgrep) |
 | `<Space>fb` | List buffers |
 | `<Space>fg` | Find git files |
 | `<Space>fh` | File history |
-| `<Space>fs` | Document symbols (neovim) |
-| `<Space>fd` | Diagnostics (neovim) |
-| `<Space>fk` | All keymaps (neovim) |
-| `<Space>fr` | Resume last search (neovim) |
-| `<Space>fe` / `<Space>e` | File explorer (neovim) |
+| `<Space>fs` | Document symbols |
+| `<Space>fd` | Diagnostics |
+| `<Space>fk` | All keymaps |
+| `<Space>fr` | Resume last search |
+| `<Space>fe` / `<Space>e` | File explorer |
 | **Search (`<Space>s`)** | |
 | `<Space>ss` | Search in project (grep) |
 | `<Space>sw` | Search word under cursor |
@@ -292,19 +372,18 @@ fi
 | `<Space>ca` | Code action |
 | `<Space>cd` | Line diagnostics |
 | `<Space>ci` | Organize imports |
-| `<Space>cp` | Run autopep8 (vim only) |
 | **Git (`<Space>g`)** | |
-| `<Space>gg` | Open LazyGit (neovim) |
-| `<Space>gd` | Open diff view (neovim) |
-| `<Space>gh` | File git history (neovim) |
-| `<Space>gH` | Branch git history (neovim) |
-| `<Space>gf` | LazyGit file history (neovim) |
-| `<Space>gq` | Close diff view (neovim) |
+| `<Space>gg` | Open LazyGit |
+| `<Space>gd` | Open diff view |
+| `<Space>gh` | File git history |
+| `<Space>gH` | Branch git history |
+| `<Space>gf` | LazyGit file history |
+| `<Space>gq` | Close diff view |
 | **LSP (`<Space>l`)** | |
-| `<Space>lr` | LSP rename (neovim) |
-| `<Space>la` | LSP code action (neovim) |
-| `<Space>lf` | LSP format (neovim) |
-| `<Space>ld` | LSP diagnostics (neovim) |
+| `<Space>lr` | LSP rename |
+| `<Space>la` | LSP code action |
+| `<Space>lf` | LSP format |
+| `<Space>ld` | LSP diagnostics (on LSP attach) |
 | **Tabs (`<Space>t`)** | |
 | `<Space>th` | Previous tab |
 | `<Space>tn` | Next tab |
@@ -343,11 +422,10 @@ fi
 | `<Space>am` | Select agent mode |
 | **Quick Actions** | |
 | `<Space>w` / `q` / `x` | Save / Quit / Save+Quit |
-| `<Space>/` | Clear highlight (vim) / Search in buffer (neovim) |
+| `<Space>/` | Search in buffer |
 | `<Space>y` / `p` / `P` | System clipboard yank/paste |
-| `<Space>cp` | Run autopep8 (vim only) |
 | **Navigation** | |
-| `[d` / `]d` | Previous/next diagnostic (neovim) |
+| `[d` / `]d` | Previous/next diagnostic |
 | `gd` | Go to definition (neovim LSP) |
 | `gr` | Find references (neovim LSP) |
 | `K` | Hover documentation (neovim LSP) |
@@ -359,7 +437,7 @@ fi
 | `mkcd <dir>` | Create directory and cd into it |
 | `t` | cd to ~/temp (creates if needed) |
 | `extract <file>` | Extract various archive formats |
-| `fzf_search_content` | Search file contents, open in vim |
+| `fzf_search_content` | Search file contents, open in nvim |
 
 ### Bin Scripts
 

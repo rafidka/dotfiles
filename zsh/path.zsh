@@ -28,17 +28,15 @@ path_prepend "${HOME}/go/bin"          # Go
 # FZF (if installed in standard location)
 [[ -d "${HOME}/.fzf/bin" ]] && path_prepend "${HOME}/.fzf/bin"
 
-# Default editor (prefer nvim if available)
-if command -v nvim &>/dev/null; then
-    export EDITOR="${EDITOR:-nvim}"
-    export VISUAL="${VISUAL:-nvim}"
-else
-    export EDITOR="${EDITOR:-vim}"
-    export VISUAL="${VISUAL:-vim}"
-fi
+# Default editor (Neovim only - see nvim/init.lua)
+export EDITOR="${EDITOR:-nvim}"
+export VISUAL="${VISUAL:-nvim}"
 
-# Vim configuration - use VIMINIT to source our vimrc without symlinks
-export VIMINIT="source ${DOTFILES}/vim/vimrc"
+# Neovim finds our config through the ~/.config/nvim/init.lua wrapper that
+# install.sh writes, so no VIMINIT and no symlinks are needed here. Unset it in
+# case an older version of these dotfiles exported it into this shell: it would
+# now point at a deleted file, and plain Vim cannot parse our Lua config anyway.
+unset VIMINIT
 
 # Python REPL startup file
 export PYTHONSTARTUP="${DOTFILES}/python/pythonrc.py"

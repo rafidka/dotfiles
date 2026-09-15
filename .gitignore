@@ -1,12 +1,12 @@
 # Machine-specific local configuration
 zsh/local.zsh
 
-# Vim plugin files (managed by vim-plug)
-vim/plugged/
-vim/autoload/
+# Neovim plugin files (managed by vim-plug)
+nvim/plugged/
+nvim/autoload/
 
-# Vim undo history
-vim/undodir/
+# Neovim undo history
+nvim/undodir/
 
 # OS files
 .DS_Store
